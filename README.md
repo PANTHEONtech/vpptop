@@ -72,11 +72,9 @@ $ sudo vpptop
 
 ## Developing vpptop
 
-This section provides information about vpptop development.
+This section is **not required** for running vpptop and provides information for development of vpptop.
 
 ### VPP binary API
-
-> NOTE: This step is not needed for running vpptop!
 
 The vpptop uses GoVPP's binapi-generator to generate Go bindings for VPP binary API from JSON format. This should not normally be needed unless you want to use vpptop with different VPP version that has changed it's API.
 
@@ -91,6 +89,7 @@ The vpptop uses [go generate](https://blog.golang.org/generate) tool to actually
 By default it will use the JSON files stored in `/usr/share/vpp/api/core/` that are installed together with VPP and outputs the generated files to `bin_api` directory.
 
 In case you need to use different JSON files you can change the arguments in the `gen.go` file, where you can specify the input directory of the JSON files and where the bindings should be generated.
+
 
 [wiki-tui]: https://en.wikipedia.org/wiki/Text-based_user_interface
 [stats-version-commit]: https://github.com/FDio/vpp/commit/1cb333cdf5ce26557233c5bdb5a18738cb6e1e2c
