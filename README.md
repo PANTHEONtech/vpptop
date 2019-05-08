@@ -28,7 +28,14 @@ In order to install and run vpptop you need to install following requirements:
 
 ### Install VPP
 
-For instructions of how to install VPP from packages, see: <https://wiki.fd.io/view/VPP/Installing_VPP_binaries_from_packages>
+To install VPP from packagecloud on Ubuntu 18.04, run following commands:
+
+```sh
+curl -s https://packagecloud.io/install/repositories/fdio/1904/script.deb.sh | sudo bash
+sudo apt-get install -y vpp vpp-dev vpp-plugin-core
+```
+
+For more info about how to install VPP from packages, see: <https://wiki.fd.io/view/VPP/Installing_VPP_binaries_from_packages>
 
 :warning: For full support of interface/node names in vpptop, the VPP version has to be `19.04-3~g1cb333cdf~b41` or newer. The release version of VPP 19.04 will not work, because [stats API versioning][stats-version-commit] was added after the release of VPP 19.04 (it was backported to _stable/1904_ branch).
 
