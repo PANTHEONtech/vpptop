@@ -1,4 +1,5 @@
-# vpptop
+vpptop
+======
 
 The **vpptop** is a Go implementation of real-time viewer for VPP metrics provided by dynamic terminal user interface.
 
@@ -30,8 +31,6 @@ In order to install and run vpptop you need to install following requirements:
 For instructions of how to install VPP from packages, see: <https://wiki.fd.io/view/VPP/Installing_VPP_binaries_from_packages>
 
 :warning: For full support of interface/node names in vpptop, the VPP version has to be `19.04-3~g1cb333cdf~b41` or newer. The release version of VPP 19.04 will not work, because [stats API versioning][stats-version-commit] was added after the release of VPP 19.04 (it was backported to _stable/1904_ branch).
-
-> NOTE: When installing VPP from packagecloud using [FDio's 1904 repository](https://packagecloud.io/fdio/1904), using `apt-get install vpp` will NOT install the correct VPP version. This is because the order of versions in this repository is not correct.  To install correct VPP version, you should specify version you want install, e.g. `apt-get install vpp=19.04-3~g1cb333cdf~b41`.
 
 ### Configure VPP
 
