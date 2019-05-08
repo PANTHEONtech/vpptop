@@ -25,7 +25,7 @@ Following VPP stats are currently supported:
 In order to install and run vpptop you need to install following requirements:
 
  - [Go](https://golang.org/dl/) 1.11+
- - [VPP](https://wiki.fd.io/view/VPP) 19.04
+ - [VPP](https://wiki.fd.io/view/VPP) (`19.04-3~g1cb333cdf~b41` is recommended, more info below)
 
 ### Install VPP
 
