@@ -18,16 +18,14 @@ Following VPP stats are currently supported:
  - **Memory usage** - free, used..
  - **Thread info** - name, type, PID..
 
-## Install
-
-### Requirements
+## Requirements
 
 In order to install and run vpptop you need to install following requirements:
 
  - [Go](https://golang.org/dl/) 1.11+
  - [VPP](https://wiki.fd.io/view/VPP) (`19.04-3~g1cb333cdf~b41` is recommended, more info below)
 
-### Install VPP
+### Installing VPP
 
 For instructions of how to install VPP from packages, see: <https://wiki.fd.io/view/VPP/Installing_VPP_binaries_from_packages>
 
@@ -35,7 +33,7 @@ For instructions of how to install VPP from packages, see: <https://wiki.fd.io/v
 
 > NOTE: When installing VPP from packagecloud using [FDio's 1904 repository](https://packagecloud.io/fdio/1904), using `apt-get install vpp` will NOT install the correct VPP version. This is because the order of versions in this repository is not correct.  To install correct VPP version, you should specify version you want install, e.g. `apt-get install vpp=19.04-3~g1cb333cdf~b41`.
 
-### Install vpptop
+## Install vpptop
 
 To install vpptop run the following command:
 
@@ -53,7 +51,7 @@ statsseg {
 }
 ```
 
-### Run vpptop
+## Run vpptop
 
 The VPP should be running before starting vpptop. To start vpptop run following command:
 
