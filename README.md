@@ -37,7 +37,7 @@ For instructions of how to install VPP from packages, see: <https://wiki.fd.io/v
 
 The vpptop uses VPP stats API for retrieving statistics. The VPP stats API is disabled by default and to enable it, add [`statseg` section](https://wiki.fd.io/view/VPP/Command-line_Arguments#statseg_.7B_..._.7D) to your VPP config, like this:
 
-```
+```sh
 # this will use /run/vpp/stats.sock for stats socket
 statsseg {
 	default
