@@ -25,13 +25,24 @@ In order to install and run vpptop you need to install following requirements:
  - [Go](https://golang.org/dl/) 1.11+
  - [VPP](https://wiki.fd.io/view/VPP) (`19.04-3~g1cb333cdf~b41` is recommended, more info below)
 
-### Installing VPP
+### Install VPP
 
 For instructions of how to install VPP from packages, see: <https://wiki.fd.io/view/VPP/Installing_VPP_binaries_from_packages>
 
 :warning: For full support of interface/node names in vpptop, the VPP version has to be `19.04-3~g1cb333cdf~b41` or newer. The release version of VPP 19.04 will not work, because [stats API versioning][stats-version-commit] was added after the release of VPP 19.04 (it was backported to _stable/1904_ branch).
 
 > NOTE: When installing VPP from packagecloud using [FDio's 1904 repository](https://packagecloud.io/fdio/1904), using `apt-get install vpp` will NOT install the correct VPP version. This is because the order of versions in this repository is not correct.  To install correct VPP version, you should specify version you want install, e.g. `apt-get install vpp=19.04-3~g1cb333cdf~b41`.
+
+### Configure VPP
+
+The vpptop uses VPP stats API for retrieving statistics. The VPP stats API is disabled by default and to enable it, add [`statseg` section](https://wiki.fd.io/view/VPP/Command-line_Arguments#statseg_.7B_..._.7D) to your VPP config, like this:
+
+```
+# this will use /run/vpp/stats.sock for stats socket
+statsseg {
+	default
+}
+```
 
 ## Install vpptop
 
@@ -42,23 +53,16 @@ To install vpptop run the following command:
 $ go get -u github.com/PantheonTechnologies/vpptop
 ```
 
-The VPP should have enabled stats API. To enable stats API add [`statseg` section](https://wiki.fd.io/view/VPP/Command-line_Arguments#statseg_.7B_..._.7D) to your VPP startup config. 
-
-```
-# this will use /run/vpp/stats.sock for stats socket
-statsseg {
-	default
-}
-```
-
 ## Run vpptop
 
-The VPP should be running before starting vpptop. To start vpptop run following command:
+To start vpptop run following command:
 
 ```sh
 $ sudo vpptop
 # sudo might be required, due stats socket file permissions
 ```
+
+NOTE: The VPP should be running before starting vpptop!
 
 ### Keybindings
 
