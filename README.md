@@ -1,12 +1,16 @@
 # vpptop
 
-The `vpptop` is a Go implementation of real-time viewer for VPP metrics provided by dynamic terminal user interface ([TUI][wiki-tui]).
+The **vpptop** is a Go implementation of real-time viewer for VPP metrics provided by dynamic terminal user interface.
 
-[![asciicast](https://asciinema.org/a/NHODZM2ebcwWFPEEPcja8X19R.svg)](https://asciinema.org/a/NHODZM2ebcwWFPEEPcja8X19R)
+## Preview
+
+Below is short demo preview of **vpptop** in action.
+
+[![preview](https://asciinema.org/a/NHODZM2ebcwWFPEEPcja8X19R.svg)](https://asciinema.org/a/NHODZM2ebcwWFPEEPcja8X19R)
 
 ## Features
 
-Following VPP metrics are currently supported:
+Following VPP stats are currently supported:
 
  - **Interface stats** - RX/TX packets/bytes, packet errors/drops/punts/IPv4..
  - **Node stats** - clocks, vectors, calls, suspends..
