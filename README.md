@@ -44,7 +44,7 @@ statsseg {
 }
 ```
 
-## Install vpptop
+## Install & Run vpptop
 
 To install vpptop run the following command:
 
@@ -53,13 +53,11 @@ To install vpptop run the following command:
 $ go get -u github.com/PantheonTechnologies/vpptop
 ```
 
-## Run vpptop
-
 To start vpptop run following command:
 
 ```sh
-$ sudo vpptop
-# sudo might be required, due stats socket file permissions
+$ sudo -E vpptop
+# sudo might be required, because of permissions to stats socket file
 ```
 
 NOTE: The VPP should be running before starting vpptop!
