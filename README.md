@@ -45,7 +45,7 @@ The vpptop uses VPP stats API for retrieving statistics. The VPP stats API is di
 
 ```sh
 # this will use /run/vpp/stats.sock for stats socket
-statsseg {
+statseg {
 	default
 }
 ```
