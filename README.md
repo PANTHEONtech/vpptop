@@ -1,7 +1,8 @@
-vpptop
-======
+<h1 align="center">vpptop</h1>
 
-The **vpptop** is a Go implementation of real-time viewer for VPP metrics provided by dynamic terminal user interface.
+<p align="center"><b>vpptop</b> is a Go implementation of real-time viewer for VPP metrics shown in dynamic terminal user interface.</p>
+
+---
 
 ## Preview
 
@@ -11,7 +12,7 @@ Below is short demo preview of **vpptop** in action.
 
 ## Features
 
-Following VPP stats are currently supported:
+Following VPP metrics are currently supported:
 
  - **Interface stats** - RX/TX packets/bytes, packet errors/drops/punts/IPv4..
  - **Node stats** - clocks, vectors, calls, suspends..
@@ -22,9 +23,8 @@ Following VPP stats are currently supported:
 ## Requirements
 
 In order to install and run vpptop you need to install following requirements:
-
- - [Go](https://golang.org/dl/) 1.11+
- - [VPP](https://wiki.fd.io/view/VPP) (`19.04-3~g1cb333cdf~b41` is recommended, more info below)
+ - [Go](https://golang.org/dl/) **1.11**
+ - [VPP](https://wiki.fd.io/view/VPP) (**19.04.1** recommended, more info below)
 
 ### Install VPP
 
@@ -37,36 +37,36 @@ sudo apt-get install -y vpp vpp-dev vpp-plugin-core
 
 For more info about how to install VPP from packages, see: <https://wiki.fd.io/view/VPP/Installing_VPP_binaries_from_packages>
 
-:warning: For full support of interface/node names in vpptop, the VPP version has to be `19.04-3~g1cb333cdf~b41` or newer. The release version of VPP 19.04 will not work, because [stats API versioning][stats-version-commit] was added after the release of VPP 19.04 (it was backported to _stable/1904_ branch).
+For full support of interface and node names in vpptop, the VPP version has to be **19.04.1** or newer. The release version of VPP 19.04 will not work, because [stats API versioning][stats-version-commit] was added after the release of VPP 19.04 (it was backported to _stable/1904_ branch).
 
 ### Configure VPP
 
 The vpptop uses VPP stats API for retrieving statistics. The VPP stats API is disabled by default and to enable it, add [`statseg` section](https://wiki.fd.io/view/VPP/Command-line_Arguments#statseg_.7B_..._.7D) to your VPP config, like this:
 
 ```sh
-# this will use /run/vpp/stats.sock for stats socket
+# enable stats socket (default at /run/vpp/stats.sock)
 statseg {
-	default
+    default
 }
 ```
 
 ## Install & Run vpptop
 
-To install vpptop run the following command:
+To install vpptop run:
 
 ```sh
-# this will install vpptop to $GOPATH/bin
+# install vpptop to $GOPATH/bin
 $ go get -u github.com/PantheonTechnologies/vpptop
 ```
 
-To start vpptop run following command:
+To start vpptop run:
 
 ```sh
+# sudo might be required here, because of the permissions to stats socket file
 $ sudo -E vpptop
-# sudo might be required, because of permissions to stats socket file
 ```
 
-NOTE: The VPP should be running before starting vpptop!
+**NOTE:** The VPP should be running before starting vpptop!
 
 ### Keybindings
 
@@ -80,7 +80,7 @@ NOTE: The VPP should be running before starting vpptop!
 
 ## Developing vpptop
 
-This section is **not required** for running vpptop and provides information for development of vpptop.
+This section is **not required** for running vpptop and provides info about vpptop development.
 
 ### VPP binary API
 
