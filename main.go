@@ -24,8 +24,8 @@ import (
 	"strings"
 	"time"
 
-	"git.fd.io/govpp.git/adapter/vppapiclient"
 	tui "github.com/gizak/termui/v3"
+
 	"github.com/PantheonTechnologies/vpptop/stats"
 	"github.com/PantheonTechnologies/vpptop/xtui"
 )
@@ -110,32 +110,35 @@ var (
 )
 
 var (
-	sockt = flag.String("socket", vppapiclient.DefaultStatSocket, "VPP stats segment socket")
+	statSock = flag.String("socket", stats.DefaultSocket, "VPP stats segment socket")
+	logFile  = flag.String("log", "vpptop.log", "Log file")
 )
 
 func main() {
 	flag.Parse()
 
-	logs, err := os.Create("gsv_logs.txt")
-	if err != nil {
-		log.Fatalf("Error occured while creating file: %v\n", err)
-	}
-	defer logs.Close()
-	log.SetOutput(logs)
-
-	if err := tui.Init(); err != nil {
-		log.Fatalf("error occured while initializing termui: %v\n", err)
-	}
-	defer tui.Close()
-
-	if err := stats.Connect(*sockt); err != nil {
-		log.Fatalf("Error occured while connecting: %v \n", err)
+	if err := stats.Connect(*statSock); err != nil {
+		log.Fatalf("Error occured while connecting: %v", err)
 	}
 	defer stats.Disconnect()
 
+	logs, err := os.Create(*logFile)
+	if err != nil {
+		log.Fatalf("Error occured while creating file: %v", err)
+	}
+	defer logs.Close()
+
+	if err := tui.Init(); err != nil {
+		log.Fatalf("error occured while initializing termui: %v", err)
+	}
+	defer tui.Close()
+
+	// set log output to file after tui.Init
+	log.SetOutput(logs)
+
 	version.Text, err = stats.Version()
 	if err != nil {
-		log.Printf("Error stats.Version: %v\n", err)
+		log.Printf("Error stats.Version: %v", err)
 	}
 
 	resizeWidgets(tui.TerminalDimensions())
@@ -158,7 +161,7 @@ func main() {
 			case <-clear:
 				clearCounters(tabPane.ActiveTabIndex)
 			case <-quit:
-				quit <- struct{}{}
+				close(quit)
 				return
 			}
 		}

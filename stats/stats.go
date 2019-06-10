@@ -17,6 +17,7 @@
 package stats
 
 import (
+	"fmt"
 	"net"
 	"strings"
 
@@ -36,6 +37,8 @@ const (
 )
 
 var (
+	DefaultSocket = vppapiclient.DefaultStatSocket
+
 	client    adapter.StatsAPI
 	statsConn *core.StatsConnection
 
@@ -54,7 +57,6 @@ type Nodes struct {
 // to also include Ipv4 addresses, IPv6 addresses, state and Mtu.
 type Interfaces struct {
 	api.InterfaceCounters
-	//Name  string
 	IPv4  []string
 	IPv6  []string
 	State string
@@ -87,6 +89,16 @@ func Connect(soc string) error {
 	if err != nil {
 		return err
 	}
+
+	var msgs []api.Message
+	msgs = append(msgs, interfaces.Messages...)
+	msgs = append(msgs, ip.Messages...)
+	msgs = append(msgs, vpe.Messages...)
+	err = apiChan.CheckCompatiblity(msgs...)
+	if err != nil {
+		return fmt.Errorf("compatibility check failed: %v", err)
+	}
+
 	return nil
 }
 
@@ -98,7 +110,7 @@ func Version() (string, error) {
 	if err := apiChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return "", err
 	}
-	return "version:" + reply.Version + "\n" + reply.BuildDate, nil
+	return "VPP version: " + reply.Version + "\n" + reply.BuildDate, nil
 }
 
 // Disconnect should be called after Connect, if the connection is no longer needed.
