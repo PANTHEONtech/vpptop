@@ -10,6 +10,13 @@ Below is short demo preview of **vpptop** in action.
 
 [![preview](https://asciinema.org/a/NHODZM2ebcwWFPEEPcja8X19R.svg)](https://asciinema.org/a/NHODZM2ebcwWFPEEPcja8X19R)
 
+## Branches
+
+|Branch|Info|
+|---|---|
+|[![master](https://img.shields.io/badge/branch-master-blue.svg?logo=git&logoColor=white)](https://github.com/PantheonTechnologies/vpptop/tree/master)| support for [vpp master](https://packagecloud.io/fdio/master) (19.08) work in progress |
+|[![dev](https://img.shields.io/badge/branch-vpp1904-orange.svg?logo=git&logoColor=white)](https://github.com/PantheonTechnologies/vpptop/tree/vpp1904)|support for [vpp 19.04](https://packagecloud.io/fdio/1904)|
+
 ## Features
 
 Following VPP metrics are currently supported:
@@ -24,7 +31,7 @@ Following VPP metrics are currently supported:
 
 In order to install and run vpptop you need to install following requirements:
  - [Go](https://golang.org/dl/) **1.11**
- - [VPP](https://wiki.fd.io/view/VPP) (**19.04.1** recommended, more info below)
+ - [VPP](https://wiki.fd.io/view/VPP) (**master (19.08)** recommended, more info below)
 
 ### Install VPP
 
