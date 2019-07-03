@@ -31,7 +31,7 @@ Following VPP metrics are currently supported:
 
 In order to install and run vpptop you need to install following requirements:
  - [Go](https://golang.org/dl/) **1.11**
- - [VPP](https://wiki.fd.io/view/VPP) (**master (19.08)** recommended, more info below)
+ - [VPP](https://wiki.fd.io/view/VPP) (**master (19.08-rc0~581-g3eea9de89)** recommended, more info below)
 
 ### Install VPP
 
