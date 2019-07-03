@@ -23,7 +23,7 @@ import (
 
 	"git.fd.io/govpp.git"
 	"git.fd.io/govpp.git/adapter"
-	"git.fd.io/govpp.git/adapter/vppapiclient"
+	"git.fd.io/govpp.git/adapter/statsclient"
 	"git.fd.io/govpp.git/api"
 	"git.fd.io/govpp.git/core"
 	"github.com/PantheonTechnologies/vpptop/bin_api/interfaces"
@@ -75,7 +75,7 @@ type Error struct {
 
 // Connect establishes a connection to the govpp API.
 func (s *VPP) Connect(soc string) error {
-	s.client = vppapiclient.NewStatClient(soc)
+	s.client = statsclient.NewStatsClient(soc)
 
 	var err error
 	s.statsConn, err = core.ConnectStats(s.client)
