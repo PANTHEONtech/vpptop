@@ -104,9 +104,13 @@ const (
 	keyCtrl7      = "<C-7>"
 )
 
-var (
-	// Hold the previous interfaceStats to calculate Bytes/s Packets/s.
-	prevInterfaceStats []stats.Interfaces
+// OpText
+const (
+	OpClearInterfaces = "cleared interfaces stats"
+	OpClearNodes      = "cleared nodes stats"
+	OpClearErrors     = "cleared error stats"
+	OpFilter          = "applied filter"
+	OpSort            = "applied sort by column"
 )
 
 var (
@@ -117,14 +121,15 @@ var (
 func main() {
 	flag.Parse()
 
-	if err := stats.Connect(*statSock); err != nil {
-		log.Fatalf("Error occured while connecting: %v", err)
+	vppstats := new(stats.VPP)
+	if err := vppstats.Connect(*statSock); err != nil {
+		log.Fatalf("error occured while connecting: %v", err)
 	}
-	defer stats.Disconnect()
+	defer vppstats.Disconnect()
 
 	logs, err := os.Create(*logFile)
 	if err != nil {
-		log.Fatalf("Error occured while creating file: %v", err)
+		log.Fatalf("error occured while creating file: %v", err)
 	}
 	defer logs.Close()
 
@@ -133,18 +138,17 @@ func main() {
 	}
 	defer tui.Close()
 
-	// set log output to file after tui.Init
 	log.SetOutput(logs)
 
-	version.Text, err = stats.Version()
+	version.Text, err = vppstats.Version()
 	if err != nil {
-		log.Printf("Error stats.Version: %v", err)
+		log.Printf("error stats.Version: %v", err)
 	}
 
 	resizeWidgets(tui.TerminalDimensions())
 
 	for i := range views {
-		updateTableRows(i)
+		updateTableRows(vppstats, i)
 	}
 
 	renderTicker := time.NewTicker(time.Millisecond * 32).C
@@ -157,9 +161,9 @@ func main() {
 		for {
 			select {
 			case <-updateTicker:
-				updateTableRows(tabPane.ActiveTabIndex)
+				updateTableRows(vppstats, tabPane.ActiveTabIndex)
 			case <-clear:
-				clearCounters(tabPane.ActiveTabIndex)
+				clearCounters(vppstats, tabPane.ActiveTabIndex)
 			case <-quit:
 				close(quit)
 				return
@@ -170,7 +174,7 @@ func main() {
 	for {
 		select {
 		case <-renderTicker:
-			tui.Render(tabPane, version)
+			tui.Render(tabPane, version, lastOperation)
 			tui.Render(views[tabPane.ActiveTabIndex].Header, views[tabPane.ActiveTabIndex].Table)
 		case e := <-inputEvents:
 			switch e.Type {
@@ -182,6 +186,7 @@ func main() {
 						break
 					}
 					renderEventSort(renderTicker, inputEvents)
+					pushLastOperation(OpSort)
 				case keyQuit:
 					quit <- struct{}{}
 
@@ -189,6 +194,7 @@ func main() {
 					// set-up the exit screen
 					// to be displayed in the center.
 					w, h := tui.TerminalDimensions()
+
 					x1 := w/2 - w/4
 					y1 := h/2 - h/4
 
@@ -225,6 +231,7 @@ func main() {
 						break
 					}
 					renderEventFilter(renderTicker, inputEvents)
+					pushLastOperation(OpFilter)
 				case keyCtrlC:
 					clear <- struct{}{}
 				}
@@ -243,7 +250,7 @@ func renderEventFilter(renderTicker <-chan time.Time, events <-chan tui.Event) {
 		filter.Text = views[tabPane.ActiveTabIndex].Table.Filter()
 		select {
 		case <-renderTicker:
-			tui.Render(tabPane, version, filter, filterExit)
+			tui.Render(tabPane, version, filter, filterExit, lastOperation)
 			tui.Render(views[tabPane.ActiveTabIndex].Header, views[tabPane.ActiveTabIndex].Table)
 		case e := <-events:
 			switch e.Type {
@@ -321,87 +328,66 @@ func renderEventSort(renderTicker <-chan time.Time, events <-chan tui.Event) {
 	}
 }
 
-// columnFromMousePos calculates the column
-// of the table based on the mouse position.
-//func columnFromMousePos(tableHeader *xtui.Table, x, y int) (int, error) {
-//	if y < tableHeaderTopY || y > tableHeaderBottomY {
-//		return 0, errors.New("Y-pos out of bounds")
-//	}
-//	columnsWidths, err := tableHeader.ColumnWidths()
-//	log.Println(columnsWidths)
-//	if err != nil {
-//		return 0, err
-//	}
-//
-//	c := -1
-//	w := 0
-//	for _, cw := range columnsWidths {
-//		w += cw
-//		w += 1 // count the column separator
-//		c += 1 // increment column index
-//		if x <= w {
-//			break
-//		}
-//	}
-//	return c, nil
-//}
-
 // clearCounters clears all the counters in the specified tab
-func clearCounters(tab int) {
+func clearCounters(vppstats *stats.VPP, tab int) {
 	switch tab {
 	case Nodes:
-		if err := stats.ClearRuntimeCounters(); err != nil {
-			log.Printf("Error occured while clearing runetime counters:%v\n", err)
+		if err := vppstats.ClearRuntimeCounters(); err != nil {
+			log.Printf("error occured while clearing runetime counters:%v\n", err)
 		}
+
+		pushLastOperation(OpClearNodes)
 	case Interfaces:
-		for i := range prevInterfaceStats {
-			if err := stats.ClearIfaceCounters(prevInterfaceStats[i].InterfaceIndex); err != nil {
-				log.Printf("Error occured while clearing interface stats counters:%v\n", err)
+		for i := range vppstats.IfCache {
+			if err := vppstats.ClearIfaceCounters(vppstats.IfCache[i].InterfaceIndex); err != nil {
+				log.Printf("error occured while clearing interface stats counters:%v\n", err)
 			}
 		}
-		prevInterfaceStats = nil
+		vppstats.IfCache = nil
+		pushLastOperation(OpClearInterfaces)
 	case Errors:
-		if err := stats.ClearErrorCounters(); err != nil {
-			log.Printf("Error occured while clearing errrors counters:%v\n", err)
+		if err := vppstats.ClearErrorCounters(); err != nil {
+			log.Printf("error occured while clearing errrors counters:%v\n", err)
 		}
+		pushLastOperation(OpClearErrors)
 	}
 }
 
 // updateTableRows updates the table rows in the specified table.
-func updateTableRows(tab int) {
+func updateTableRows(vppstats *stats.VPP, tab int) {
 	switch tab {
 	case Nodes:
-		rows, err := updateNodes()
+		rows, err := updateNodes(vppstats)
 		if err != nil {
-			log.Printf("Error occured while dumping nodes stats: %v\n", err)
+			log.Printf("error occured while dumping nodes stats: %v\n", err)
 			break
 		}
 		views[Nodes].Table.Rows = rows
 	case Interfaces:
-		rows, err := updateInterfaces()
+		rows, err := updateInterfaces(vppstats)
 		if err != nil {
-			log.Printf("Error occured while dumping interface stats: %v\n", err)
+			log.Printf("error occured while dumping interface stats: %v\n", err)
 			break
 		}
 		views[Interfaces].Table.Rows = rows
 	case Errors:
-		rows, err := updateErrors()
+		rows, err := updateErrors(vppstats)
 		if err != nil {
-			log.Printf("Error occured while dumping error stats: %v\n", err)
+			log.Printf("error occured while dumping error stats: %v\n", err)
 			break
 		}
 		views[Errors].Table.Rows = rows
 	case Memory:
-		rows, err := updateMemory()
+		rows, err := updateMemory(vppstats)
 		if err != nil {
-			log.Printf("Error occured while dumping memory stats: %v\n", err)
+			log.Printf("error occured while dumping memory stats: %v\n", err)
 			break
 		}
 		views[Memory].Table.Rows = rows
 	case Threads:
-		rows, err := updateThreads()
+		rows, err := updateThreads(vppstats)
 		if err != nil {
-			log.Printf("Error occured while dumping threads stats: %v\n", err)
+			log.Printf("error occured while dumping threads stats: %v\n", err)
 			break
 		}
 		views[Threads].Table.Rows = rows
@@ -409,16 +395,16 @@ func updateTableRows(tab int) {
 }
 
 // updateMemory fetches updated memory usage per thread from the stats package.
-func updateMemory() (xtui.TableRows, error) {
-	mem, err := stats.Memory()
+func updateMemory(vppstats *stats.VPP) (xtui.TableRows, error) {
+	mem, err := vppstats.Memory()
 	if err != nil {
 		return nil, err
 	}
 	// stats.Memory returns the stats as []string
-	// where 8 rows corresponds to one entry.
-	const rowsPerEntry = 8
+	// where 7 rows corresponds to one entry.
+	const rowsPerEntry = 7
 	count := len(mem) / rowsPerEntry              // number of entries.
-	rows := make([][]string, RowsPerMemory*count) // our view will have 7 rows per entry.
+	rows := make([][]string, RowsPerMemory*count) // our view will have 6 rows per entry.
 	for i := 0; i < count; i++ {
 		rows[RowsPerMemory*i] = []string{mem[rowsPerEntry*i], mem[rowsPerEntry*i+1]}
 		rows[RowsPerMemory*i+1] = []string{xtui.EmptyCell, mem[rowsPerEntry*i+2]}
@@ -426,15 +412,14 @@ func updateMemory() (xtui.TableRows, error) {
 		rows[RowsPerMemory*i+3] = []string{xtui.EmptyCell, mem[rowsPerEntry*i+4]}
 		rows[RowsPerMemory*i+4] = []string{xtui.EmptyCell, mem[rowsPerEntry*i+5]}
 		rows[RowsPerMemory*i+5] = []string{xtui.EmptyCell, mem[rowsPerEntry*i+6]}
-		rows[RowsPerMemory*i+6] = []string{xtui.EmptyCell, mem[rowsPerEntry*i+7]}
-		rows[RowsPerMemory*i+7] = []string{xtui.EmptyCell, xtui.EmptyCell}
+		rows[RowsPerMemory*i+6] = []string{xtui.EmptyCell, xtui.EmptyCell}
 	}
 	return rows, nil
 }
 
 // updateThreads fetches updated thread stats from the stats package.
-func updateThreads() (xtui.TableRows, error) {
-	threadStats, err := stats.Threads()
+func updateThreads(vppstats *stats.VPP) (xtui.TableRows, error) {
+	threadStats, err := vppstats.Threads()
 	if err != nil {
 		return nil, err
 	}
@@ -447,8 +432,8 @@ func updateThreads() (xtui.TableRows, error) {
 
 // updateErrors fetches updated errors stats from the stats package
 // sorts them based on the defined column.
-func updateErrors() (xtui.TableRows, error) {
-	errorStats, err := stats.GetErrors()
+func updateErrors(vppstats *stats.VPP) (xtui.TableRows, error) {
+	errorStats, err := vppstats.GetErrors()
 	if err != nil {
 		return nil, err
 	}
@@ -463,8 +448,8 @@ func updateErrors() (xtui.TableRows, error) {
 
 // updateNodes fetches updated nodes stats from the stats package
 // sorts them based on the defined column.
-func updateNodes() (xtui.TableRows, error) {
-	nodeStats, err := stats.GetNodes()
+func updateNodes(vppstats *stats.VPP) (xtui.TableRows, error) {
+	nodeStats, err := vppstats.GetNodes()
 	if err != nil {
 		return nil, err
 	}
@@ -479,8 +464,8 @@ func updateNodes() (xtui.TableRows, error) {
 
 // updateInterfaces fetches updated interfaces stats from the stats package
 // sorts them based on the defined column.
-func updateInterfaces() (xtui.TableRows, error) {
-	interfaceStats, err := stats.GetInterfaces()
+func updateInterfaces(vppstats *stats.VPP) (xtui.TableRows, error) {
+	interfaceStats, err := vppstats.GetInterfaces()
 	if err != nil {
 		return nil, err
 	}
@@ -490,7 +475,7 @@ func updateInterfaces() (xtui.TableRows, error) {
 	// build a lookup table to be able to check for common interfaces
 	// to be able to calculate bytes/s, packets/s
 	nameToIdx := make(map[string]int)
-	for i, iface := range prevInterfaceStats {
+	for i, iface := range vppstats.IfCache {
 		nameToIdx[iface.InterfaceName] = i
 	}
 	sortInterfaceStats(interfaceStats, views[Interfaces].sortBy, views[Interfaces].ascending)
@@ -517,11 +502,11 @@ func updateInterfaces() (xtui.TableRows, error) {
 
 		if idx, ok := nameToIdx[iface.InterfaceName]; ok {
 			// Calculate bytes/s, packets/s
-			rxbbs = iface.RxBytes - prevInterfaceStats[idx].RxBytes
-			txbbs = iface.TxBytes - prevInterfaceStats[idx].TxBytes
+			rxbbs = iface.RxBytes - vppstats.IfCache[idx].RxBytes
+			txbbs = iface.TxBytes - vppstats.IfCache[idx].TxBytes
 
-			rxpps = iface.RxPackets - prevInterfaceStats[idx].RxPackets
-			txpps = iface.TxPackets - prevInterfaceStats[idx].TxPackets
+			rxpps = iface.RxPackets - vppstats.IfCache[idx].RxPackets
+			txpps = iface.TxPackets - vppstats.IfCache[idx].TxPackets
 		}
 		rows[RowsPerIface*i+1] = []string{xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, "Packets/s", fmt.Sprint(rxpps), "Packets/s", fmt.Sprint(txpps), xtui.EmptyCell, xtui.EmptyCell}
 		rows[RowsPerIface*i+2] = []string{xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, "Bytes", fmt.Sprint(iface.RxBytes), "Bytes", fmt.Sprint(iface.TxBytes), xtui.EmptyCell, xtui.EmptyCell}
@@ -555,7 +540,7 @@ func updateInterfaces() (xtui.TableRows, error) {
 			row++
 		}
 	}
-	prevInterfaceStats = interfaceStats
+	vppstats.IfCache = interfaceStats
 
 	return rows, nil
 }
