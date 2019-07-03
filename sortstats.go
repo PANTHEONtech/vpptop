@@ -22,8 +22,6 @@ import (
 	"github.com/PantheonTechnologies/vpptop/stats"
 )
 
-// Each field is mapped to an index.
-
 // NoColumn indicates no column will be sorted.
 const NoColumn = -1
 
@@ -78,74 +76,8 @@ const (
 	ErrorStatErrorReason
 )
 
-//func sortThreadStats(threadStats []vpe.ThreadData, field int) {
-//	if field == NoColumn {
-//		return
-//	}
-//	var sortFunc func(i, j int) bool
-//	switch field {
-//	case ThreadDataThreadID:
-//		sortFunc = func(i, j int) bool {
-//			if ascending {
-//				return threadStats[i].ID < threadStats[j].ID
-//			} else {
-//				return threadStats[i].ID > threadStats[j].ID
-//			}
-//		}
-//	case ThreadDataThreadName:
-//		sortFunc = func(i, j int) bool {
-//			if ascending {
-//				return string(threadStats[i].Name) < string(threadStats[j].Name)
-//			} else {
-//				return string(threadStats[i].Name) > string(threadStats[j].Name)
-//			}
-//		}
-//	case ThreadDataThreadType:
-//		sortFunc = func(i, j int) bool {
-//			if ascending {
-//				return string(threadStats[i].Type) < string(threadStats[j].Type)
-//			} else {
-//				return string(threadStats[i].Type) > string(threadStats[j].Type)
-//			}
-//		}
-//	case ThreadDataThreadPID:
-//		sortFunc = func(i, j int) bool {
-//			if ascending {
-//				return threadStats[i].PID < threadStats[j].PID
-//			} else {
-//				return threadStats[i].PID > threadStats[j].PID
-//			}
-//		}
-//	case ThreadDataThreadCPUID:
-//		sortFunc = func(i, j int) bool {
-//			if ascending {
-//				return threadStats[i].CPUID < threadStats[j].CPUID
-//			} else {
-//				return threadStats[i].CPUID > threadStats[j].CPUID
-//			}
-//		}
-//	case ThreadDataThreadCore:
-//		sortFunc = func(i, j int) bool {
-//			if ascending {
-//				return threadStats[i].Core < threadStats[j].Core
-//			} else {
-//				return threadStats[i].Core > threadStats[j].Core
-//			}
-//		}
-//	case ThreadDataThreadCPUSocket:
-//		sortFunc = func(i, j int) bool {
-//			if ascending {
-//				return threadStats[i].CPUSocket < threadStats[j].CPUSocket
-//			} else {
-//				return threadStats[i].CPUSocket > threadStats[j].CPUSocket
-//			}
-//		}
-//	}
-//	sort.Slice(threadStats, sortFunc)
-//}
-
 // sortNodeStats sort the slice based specified field
-func sortNodeStats(nodeStats []stats.Nodes, field int, ascending bool) {
+func sortNodeStats(nodeStats []stats.Node, field int, ascending bool) {
 	if field == NoColumn {
 		return
 	}
@@ -206,7 +138,7 @@ func sortNodeStats(nodeStats []stats.Nodes, field int, ascending bool) {
 }
 
 // sortInterfaceStats sort the slice based on the specified field
-func sortInterfaceStats(interfaceStats []stats.Interfaces, field int, ascending bool) {
+func sortInterfaceStats(interfaceStats []stats.Interface, field int, ascending bool) {
 	if field == NoColumn {
 		return
 	}
@@ -420,7 +352,7 @@ func sortInterfaceStats(interfaceStats []stats.Interfaces, field int, ascending 
 }
 
 // sortErrorStats sorts the slice based on the specified field
-func sortErrorStats(errorStats []stats.Errors, field int, ascending bool) {
+func sortErrorStats(errorStats []stats.Error, field int, ascending bool) {
 	if field == NoColumn {
 		return
 	}
