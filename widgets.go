@@ -18,10 +18,12 @@ package main
 
 import (
 	"fmt"
+	"sync"
+	"time"
 
+	"github.com/PantheonTechnologies/vpptop/xtui"
 	tui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
-	"github.com/PantheonTechnologies/vpptop/xtui"
 )
 
 type view struct {
@@ -54,7 +56,6 @@ const (
 	RowsPerError = 1
 	// RowsPerMemory represents number of rows in the table per memory.
 	RowsPerMemory = 8
-	//RowsPerThread = 1// Number of rows in the table per thread.
 )
 
 // Widgets positions that will not change.
@@ -99,12 +100,19 @@ var (
 
 // Widgets.
 var (
-	views      []*view
-	tabPane    *widgets.TabPane
-	version    *widgets.Paragraph
-	filter     *widgets.Paragraph
-	filterExit *widgets.Paragraph
-	exitScreen *widgets.Paragraph
+	views         []*view
+	tabPane       *widgets.TabPane
+	version       *widgets.Paragraph
+	filter        *widgets.Paragraph
+	filterExit    *widgets.Paragraph
+	exitScreen    *widgets.Paragraph
+	lastOperation *widgets.Paragraph
+)
+
+// mu is used for synchronizing write operation for lastOperation variable (lastOperation.Text)
+// this mutex is only used in the pushLastOperation func.
+var (
+	opMu = new(sync.Mutex)
 )
 
 func init() {
@@ -214,6 +222,12 @@ func init() {
 	filterExit.Text = fmt.Sprintf("Exit:%v filter:", keyCancel)
 	filterExit.TextStyle = tui.NewStyle(tui.ColorWhite, tui.ColorBlue, tui.ModifierBold)
 
+	// resized with window
+	lastOperation = widgets.NewParagraph()
+	lastOperation.Border = false
+	lastOperation.WrapText = false
+	lastOperation.TextStyle = tui.NewStyle(tui.ColorWhite, tui.ColorBlue, tui.ModifierBold)
+
 	// Need to set size when rendered !
 	exitScreen = widgets.NewParagraph()
 	exitScreen.Border = false
@@ -234,7 +248,7 @@ func resizeWidgets(w, h int) {
 		cw        = (w - usedWidth) / nCol // new width for each column that is resized with the window
 	)
 	for i := range views {
-		views[i].Table.SetRect(tableTopX, tableTopY, w, h)
+		views[i].Table.SetRect(tableTopX, tableTopY, w, h-1)
 		views[i].Header.SetRect(tableHeaderTopX, tableHeaderTopY, w, tableHeaderBottomY)
 		views[i].SList.SetRect(sortPanelTopX, sortPanelTopY, sortPanelBottomX, h)
 	}
@@ -246,4 +260,18 @@ func resizeWidgets(w, h int) {
 
 	views[Memory].Header.Table.ColumnWidths = []int{30, w - 15}
 	views[Memory].Table.Table.ColumnWidths = []int{30, w - 15}
+
+	lastOperation.SetRect(tableTopX, h-2, 75, 75)
+}
+
+// pushLastOperation synchronizes writes to the lastOperation paragraph.
+func pushLastOperation(opText string) {
+	go func() {
+		opMu.Lock()
+		defer opMu.Unlock()
+
+		lastOperation.Text = opText
+		time.Sleep(time.Second * 1)
+		lastOperation.Text = ""
+	}()
 }
