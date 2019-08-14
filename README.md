@@ -73,6 +73,10 @@ To start vpptop run:
 $ sudo -E vpptop
 ```
 
+vpptop also supports light terminal theme. To use darker colors which are better visible on light background, <br>
+you can set the `VPPTOP_THEME_LIGHT` environment variable.
+
+
 **NOTE:** The VPP should be running before starting vpptop!
 
 ### Keybindings
