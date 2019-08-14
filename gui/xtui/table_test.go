@@ -33,7 +33,7 @@ func TestTable_AppendToFilter(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		AppendToFilter(test.input)
+		test.T.AppendToFilter(test.input)
 
 		got := test.T.filter.String()
 
@@ -62,7 +62,7 @@ func TestTable_ReduceFilter(t *testing.T) {
 
 	for _, test := range tests {
 		test.T.filter.WriteString(test.input)
-		ReduceFilter(test.n)
+		test.T.ReduceFilter(test.n)
 
 		got := test.T.filter.String()
 
@@ -94,23 +94,23 @@ func TestTable_ScrollUp(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		visibleRows = test.visibleRows
-		curr = test.curr
-		prev = test.prev
-		offset = test.offset
+		test.T.visibleRows = test.visibleRows
+		test.T.curr = test.curr
+		test.T.prev = test.prev
+		test.T.offset = test.offset
 
-		ScrollUp()
+		test.T.ScrollUp()
 
-		if curr != test.wantCurr {
-			t.Errorf("Error occured curr do not match got:%v; want:%v\n", curr, test.wantCurr)
+		if test.T.curr != test.wantCurr {
+			t.Errorf("Error occured curr do not match got:%v; want:%v\n", test.T.curr, test.wantCurr)
 		}
 
-		if prev != test.wantPrev {
-			t.Errorf("Error occured prev do not match got:%v; want:%v\n", prev, test.wantPrev)
+		if test.T.prev != test.wantPrev {
+			t.Errorf("Error occured prev do not match got:%v; want:%v\n", test.T.prev, test.wantPrev)
 		}
 
-		if offset != test.wantOffset {
-			t.Errorf("Error occured offset do not match got:%v; want:%v\n", offset, test.wantOffset)
+		if test.T.offset != test.wantOffset {
+			t.Errorf("Error occured offset do not match got:%v; want:%v\n", test.T.offset, test.wantOffset)
 		}
 	}
 }
@@ -137,24 +137,24 @@ func TestTable_ScrollDown(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		visibleRows = test.visibleRows
-		curr = test.curr
-		prev = test.prev
-		offset = test.offset
-		out = test.out
+		test.T.visibleRows = test.visibleRows
+		test.T.curr = test.curr
+		test.T.prev = test.prev
+		test.T.offset = test.offset
+		test.T.out = test.out
 
-		ScrollDown()
+		test.T.ScrollDown()
 
-		if curr != test.wantCurr {
-			t.Errorf("Error occured curr do not match got:%v; want:%v\n", curr, test.wantCurr)
+		if test.T.curr != test.wantCurr {
+			t.Errorf("Error occured curr do not match got:%v; want:%v\n", test.T.curr, test.wantCurr)
 		}
 
-		if prev != test.wantPrev {
-			t.Errorf("Error occured prev do not match got:%v; want:%v\n", prev, test.wantPrev)
+		if test.T.prev != test.wantPrev {
+			t.Errorf("Error occured prev do not match got:%v; want:%v\n", test.T.prev, test.wantPrev)
 		}
 
-		if offset != test.wantOffset {
-			t.Errorf("Error occured offset do not match got:%v; want:%v\n", offset, test.wantOffset)
+		if test.T.offset != test.wantOffset {
+			t.Errorf("Error occured offset do not match got:%v; want:%v\n", test.T.offset, test.wantOffset)
 		}
 	}
 }
