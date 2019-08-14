@@ -22,62 +22,8 @@ import (
 	"github.com/PantheonTechnologies/vpptop/stats"
 )
 
-// NoColumn indicates no column will be sorted.
-const NoColumn = -1
-
-// Node stats fields
-const (
-	NodeStatNodeName = iota
-	NodeStatNodeIndex
-	NodeStatNodeClocks
-	NodeStatNodeVectors
-	NodeStatNodeCalls
-	NodeStatNodeSuspends
-	NodeStatNodeVC
-)
-
-// Interfaces stats fields
-const (
-	IfaceStatIfaceName = iota
-	IfaceStatIfaceIdx
-	IfaceStatIfaceState
-	IfaceStatIfaceMTUL3
-	IfaceStatIfaceMTUIP4
-	IfaceStatIfaceMTUIP6
-	IfaceStatIfaceMTUMPLS
-	IfaceStatIfaceRxPackets
-	IfaceStatIfaceRxBytes
-	IfaceStatIfaceRxErrors
-	IfaceStatIfaceRxUnicastPackets
-	IfaceStatIfaceRxUnicastBytes
-	IfaceStatIfaceRxMulticastPackets
-	IfaceStatIfaceRxMulticastBytes
-	IfaceStatIfaceRxBroadcastPackets
-	IfaceStatIfaceRxBroadcastBytes
-	IfaceStatIfaceTxPackets
-	IfaceStatIfaceTxBytes
-	IfaceStatIfaceTxErrors
-	IfaceStatIfaceTxUnicastMissPackets
-	IfaceStatIfaceTxUnicastMissBytes
-	IfaceStatIfaceTxMulticastPackets
-	IfaceStatIfaceTxMulticastBytes
-	IfaceStatIfaceTxBroadcastPackets
-	IfaceStatIfaceTxBroadcastBytes
-	IfaceStatIfaceDrops
-	IfaceStatIfacePunts
-	IfaceStatIfaceIP4
-	IfaceStatIfaceIP6
-)
-
-// Error stats fields
-const (
-	ErrorStatErrorCounter = iota
-	ErrorStatErrorNodeName
-	ErrorStatErrorReason
-)
-
 // sortNodeStats sort the slice based specified field
-func sortNodeStats(nodeStats []stats.Node, field int, ascending bool) {
+func (app *App) sortNodeStats(nodeStats []stats.Node, field int, ascending bool) {
 	if field == NoColumn {
 		return
 	}
@@ -138,7 +84,7 @@ func sortNodeStats(nodeStats []stats.Node, field int, ascending bool) {
 }
 
 // sortInterfaceStats sort the slice based on the specified field
-func sortInterfaceStats(interfaceStats []stats.Interface, field int, ascending bool) {
+func (app *App) sortInterfaceStats(interfaceStats []stats.Interface, field int, ascending bool) {
 	if field == NoColumn {
 		return
 	}
@@ -352,7 +298,7 @@ func sortInterfaceStats(interfaceStats []stats.Interface, field int, ascending b
 }
 
 // sortErrorStats sorts the slice based on the specified field
-func sortErrorStats(errorStats []stats.Error, field int, ascending bool) {
+func (app *App) sortErrorStats(errorStats []stats.Error, field int, ascending bool) {
 	if field == NoColumn {
 		return
 	}
