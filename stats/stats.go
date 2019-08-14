@@ -40,38 +40,38 @@ var (
 	DefaultSocket = adapter.DefaultStatsSocket
 )
 
-type VPP struct {
-	client    adapter.StatsAPI
-	statsConn *core.StatsConnection
-	vppConn   *core.Connection
-	apiChan   api.Channel
+// vpp stats help structs.
+type (
+	VPP struct {
+		client    adapter.StatsAPI
+		statsConn *core.StatsConnection
+		vppConn   *core.Connection
+		apiChan   api.Channel
+	}
+	// Node extends the counters from the api.NodeCounters
+	// to also include Vectors/Calls.
+	Node struct {
+		api.NodeCounters
+		VC float64
+	}
 
-	IfCache []Interface
-}
+	// Interface extends the counters from the api.InterfaceCounters
+	// to also include Ipv4 addresses, IPv6 addresses, state and Mtu.
+	Interface struct {
+		api.InterfaceCounters
+		IPv4  []string
+		IPv6  []string
+		State string
+		Mtu   []uint32
+	}
 
-// Node extends the counters from the api.NodeCounters
-// to also include Vectors/Calls.
-type Node struct {
-	api.NodeCounters
-	VC float64
-}
-
-// Interface extends the counters from the api.InterfaceCounters
-// to also include Ipv4 addresses, IPv6 addresses, state and Mtu.
-type Interface struct {
-	api.InterfaceCounters
-	IPv4  []string
-	IPv6  []string
-	State string
-	Mtu   []uint32
-}
-
-// Error counters.
-type Error struct {
-	Value    uint64
-	NodeName string
-	Reason   string
-}
+	// Error counters.
+	Error struct {
+		Value    uint64
+		NodeName string
+		Reason   string
+	}
+)
 
 // Connect establishes a connection to the govpp API.
 func (s *VPP) Connect(soc string) error {
@@ -286,12 +286,19 @@ func (s *VPP) GetErrors() ([]Error, error) {
 }
 
 // ClearIfaceCounters resets the counters for the interface.
-func (s *VPP) ClearIfaceCounters(ifaceIndex uint32) error {
-	req := &interfaces.SwInterfaceClearStats{SwIfIndex: ifaceIndex}
-	reply := &interfaces.SwInterfaceClearStatsReply{}
+func (s *VPP) ClearIfaceCounters() error {
+	ifaces, err := s.GetInterfaces()
+	if err != nil {
+		return err
+	}
 
-	if err := s.apiChan.SendRequest(req).ReceiveReply(reply); err != nil {
-		return fmt.Errorf("request failed: %v", err)
+	for i := range ifaces {
+		req := &interfaces.SwInterfaceClearStats{SwIfIndex: ifaces[i].InterfaceIndex}
+		reply := &interfaces.SwInterfaceClearStatsReply{}
+
+		if err := s.apiChan.SendRequest(req).ReceiveReply(reply); err != nil {
+			return fmt.Errorf("request failed: %v", err)
+		}
 	}
 
 	return nil
