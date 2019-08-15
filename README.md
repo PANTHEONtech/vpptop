@@ -14,7 +14,7 @@ Below is short demo preview of **vpptop** in action.
 
 |Branch|Info|
 |---|---|
-|[![master](https://img.shields.io/badge/branch-master-blue.svg?logo=git&logoColor=white)](https://github.com/PantheonTechnologies/vpptop/tree/master)| support for [vpp master](https://packagecloud.io/fdio/master) (19.08) work in progress |
+|[![master](https://img.shields.io/badge/branch-master-blue.svg?logo=git&logoColor=white)](https://github.com/PantheonTechnologies/vpptop/tree/master)| support for [vpp 19.08](https://packagecloud.io/fdio/1908) work in progress |
 |[![vpp1904](https://img.shields.io/badge/branch-vpp1904-orange.svg?logo=git&logoColor=white)](https://github.com/PantheonTechnologies/vpptop/tree/vpp1904)|support for [vpp 19.04](https://packagecloud.io/fdio/1904)|
 
 ## Features
@@ -38,7 +38,7 @@ In order to install and run vpptop you need to install following requirements:
 To install VPP from packagecloud on Ubuntu 18.04, run following commands:
 
 ```sh
-curl -s https://packagecloud.io/install/repositories/fdio/master/script.deb.sh | sudo bash
+curl -s https://packagecloud.io/install/repositories/fdio/1908/script.deb.sh | sudo bash
 sudo apt-get install -y vpp vpp-dev vpp-plugin-core
 ```
 
@@ -73,13 +73,17 @@ To start vpptop run:
 $ sudo -E vpptop
 ```
 
+vpptop also supports light terminal theme. To use darker colors which are better visible on light background, <br>
+you can set the `VPPTOP_THEME_LIGHT` environment variable.
+
+
 **NOTE:** The VPP should be running before starting vpptop!
 
 ### Keybindings
 
 1. Keyboard arrows ``Up, Down, Left, Right`` to switch tabs, scroll.
 2. ``Crtl-Space`` open/close menu for sort by column for the active table.
-3. ``/`` to filter the active table.
+3. ``/`` to filter the active table, `Enter` to keep the filter.
 4. ``Esc`` to cancel the previous operation.
 5. ``PgDn PgUp`` to skip pages in active table.
 6. ``Ctrl-C`` to clear counters for the active table.

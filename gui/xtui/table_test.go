@@ -26,10 +26,10 @@ func TestTable_AppendToFilter(t *testing.T) {
 		input string
 		want  string
 	}{
-		{T: NewTable(), input: "node", want: "node"},
-		{T: NewTable(), input: "", want: ""},
-		{T: NewTable(), input: "dpdk-65", want: "dpdk-65"},
-		{T: NewTable(), input: "arm-pc", want: "arm-pc"},
+		{T: NewTable(false), input: "node", want: "node"},
+		{T: NewTable(false), input: "", want: ""},
+		{T: NewTable(false), input: "dpdk-65", want: "dpdk-65"},
+		{T: NewTable(false), input: "arm-pc", want: "arm-pc"},
 	}
 
 	for _, test := range tests {
@@ -50,14 +50,14 @@ func TestTable_ReduceFilter(t *testing.T) {
 		n     int
 		want  string
 	}{
-		{T: NewTable(), input: "node", n: 1, want: "nod"},
-		{T: NewTable(), input: "", n: 1, want: ""},
-		{T: NewTable(), input: "", n: 2, want: ""},
-		{T: NewTable(), input: "", n: -1, want: ""},
-		{T: NewTable(), input: "arm-pc", n: 3, want: "arm"},
-		{T: NewTable(), input: "arm-pc", n: 5, want: "a"},
-		{T: NewTable(), input: "arm-pc", n: 6, want: ""},
-		{T: NewTable(), input: "arm-pc", n: 7, want: "arm-pc"},
+		{T: NewTable(false), input: "node", n: 1, want: "nod"},
+		{T: NewTable(false), input: "", n: 1, want: ""},
+		{T: NewTable(false), input: "", n: 2, want: ""},
+		{T: NewTable(false), input: "", n: -1, want: ""},
+		{T: NewTable(false), input: "arm-pc", n: 3, want: "arm"},
+		{T: NewTable(false), input: "arm-pc", n: 5, want: "a"},
+		{T: NewTable(false), input: "arm-pc", n: 6, want: ""},
+		{T: NewTable(false), input: "arm-pc", n: 7, want: "arm-pc"},
 	}
 
 	for _, test := range tests {
@@ -85,12 +85,12 @@ func TestTable_ScrollUp(t *testing.T) {
 		wantPrev   int
 		wantOffset int
 	}{
-		{T: NewTable(), visibleRows: 2, curr: 0, prev: 0, offset: 0, wantCurr: 0, wantPrev: 0, wantOffset: 0},
-		{T: NewTable(), visibleRows: 2, curr: 1, prev: 0, offset: 0, wantCurr: 0, wantPrev: 1, wantOffset: 0},
-		{T: NewTable(), visibleRows: 5, curr: 0, prev: 0, offset: 3, wantCurr: 0, wantPrev: 0, wantOffset: 2},
-		{T: NewTable(), visibleRows: 10, curr: 2, prev: 1, offset: 5, wantCurr: 1, wantPrev: 2, wantOffset: 5},
-		{T: NewTable(), visibleRows: 10, curr: 0, prev: 1, offset: 5, wantCurr: 0, wantPrev: 1, wantOffset: 4},
-		{T: NewTable(), visibleRows: 10, curr: 0, prev: 1, offset: 0, wantCurr: 0, wantPrev: 1, wantOffset: 0},
+		{T: NewTable(false), visibleRows: 2, curr: 0, prev: 0, offset: 0, wantCurr: 0, wantPrev: 0, wantOffset: 0},
+		{T: NewTable(false), visibleRows: 2, curr: 1, prev: 0, offset: 0, wantCurr: 0, wantPrev: 1, wantOffset: 0},
+		{T: NewTable(false), visibleRows: 5, curr: 0, prev: 0, offset: 3, wantCurr: 0, wantPrev: 0, wantOffset: 2},
+		{T: NewTable(false), visibleRows: 10, curr: 2, prev: 1, offset: 5, wantCurr: 1, wantPrev: 2, wantOffset: 5},
+		{T: NewTable(false), visibleRows: 10, curr: 0, prev: 1, offset: 5, wantCurr: 0, wantPrev: 1, wantOffset: 4},
+		{T: NewTable(false), visibleRows: 10, curr: 0, prev: 1, offset: 0, wantCurr: 0, wantPrev: 1, wantOffset: 0},
 	}
 
 	for _, test := range tests {
@@ -129,11 +129,11 @@ func TestTable_ScrollDown(t *testing.T) {
 		wantPrev   int
 		wantOffset int
 	}{
-		{T: NewTable(), visibleRows: 2, out: TableRows{{""}, {""}, {""}, {""}, {""}, {""}}, curr: 0, prev: 0, offset: 0, wantCurr: 1, wantPrev: 0, wantOffset: 0},
-		{T: NewTable(), visibleRows: 2, out: TableRows{{""}, {""}, {""}, {""}, {""}, {""}}, curr: 1, prev: 0, offset: 0, wantCurr: 1, wantPrev: 0, wantOffset: 1},
-		{T: NewTable(), visibleRows: 2, out: TableRows{{""}, {""}, {""}, {""}, {""}, {""}}, curr: 0, prev: 0, offset: 3, wantCurr: 1, wantPrev: 0, wantOffset: 3},
-		{T: NewTable(), visibleRows: 2, out: TableRows{{""}, {""}, {""}, {""}, {""}, {""}}, curr: 1, prev: 0, offset: 3, wantCurr: 1, wantPrev: 0, wantOffset: 4},
-		{T: NewTable(), visibleRows: 1, out: TableRows{{""}, {""}, {""}, {""}, {""}, {""}}, curr: 2, prev: 1, offset: 5, wantCurr: 2, wantPrev: 1, wantOffset: 5},
+		{T: NewTable(false), visibleRows: 2, out: TableRows{{""}, {""}, {""}, {""}, {""}, {""}}, curr: 0, prev: 0, offset: 0, wantCurr: 1, wantPrev: 0, wantOffset: 0},
+		{T: NewTable(false), visibleRows: 2, out: TableRows{{""}, {""}, {""}, {""}, {""}, {""}}, curr: 1, prev: 0, offset: 0, wantCurr: 1, wantPrev: 0, wantOffset: 1},
+		{T: NewTable(false), visibleRows: 2, out: TableRows{{""}, {""}, {""}, {""}, {""}, {""}}, curr: 0, prev: 0, offset: 3, wantCurr: 1, wantPrev: 0, wantOffset: 3},
+		{T: NewTable(false), visibleRows: 2, out: TableRows{{""}, {""}, {""}, {""}, {""}, {""}}, curr: 1, prev: 0, offset: 3, wantCurr: 1, wantPrev: 0, wantOffset: 4},
+		{T: NewTable(false), visibleRows: 1, out: TableRows{{""}, {""}, {""}, {""}, {""}, {""}}, curr: 2, prev: 1, offset: 5, wantCurr: 2, wantPrev: 1, wantOffset: 5},
 	}
 
 	for _, test := range tests {
