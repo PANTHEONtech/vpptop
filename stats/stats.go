@@ -157,8 +157,7 @@ func (s *VPP) ipv4Addresses(ifIndex uint32) ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		ipv4 := ipDetails.Prefix.Address.Un.GetIP4()
-		ipv4Addresses = append(ipv4Addresses, net.IP(ipv4[:]).String())
+		ipv4Addresses = append(ipv4Addresses, net.IP(ipDetails.IP[:4]).String())
 	}
 
 	return ipv4Addresses, nil
@@ -178,8 +177,7 @@ func (s *VPP) ipv6Addresses(ifIndex uint32) ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		ipv6 := ipDetails.Prefix.Address.Un.GetIP6()
-		ipv6Addresses = append(ipv6Addresses, net.IP(ipv6[:]).String())
+		ipv6Addresses = append(ipv6Addresses, net.IP(ipDetails.IP).String())
 	}
 	return ipv6Addresses, nil
 }

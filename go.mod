@@ -1,7 +1,7 @@
 module github.com/PantheonTechnologies/vpptop
 
 require (
-	git.fd.io/govpp.git v0.0.0-20190703114409-15334aab4ad1
+	git.fd.io/govpp.git v0.1.0
 	github.com/ftrvxmtrx/fd v0.0.0-20150925145434-c6d800382fff // indirect
 	github.com/gizak/termui/v3 v3.0.0
 	github.com/lunixbochs/struc v0.0.0-20190326164542-a9e4041416c2

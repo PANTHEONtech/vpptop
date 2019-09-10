@@ -1,5 +1,5 @@
-git.fd.io/govpp.git v0.0.0-20190703114409-15334aab4ad1 h1:HLcLPz3HPh6T+qv4qTjW6Y/4JWFXIKpmmsjo8Y971rs=
-git.fd.io/govpp.git v0.0.0-20190703114409-15334aab4ad1/go.mod h1:+vyimAjILe5SYKjw4/WJ/8qPl9U5Qd9IT2v6b9VB83o=
+git.fd.io/govpp.git v0.1.0 h1:fV5H9ghURFfmNAjk7Scb/aG3OGwevLayHfSdS8GsYjE=
+git.fd.io/govpp.git v0.1.0/go.mod h1:+vyimAjILe5SYKjw4/WJ/8qPl9U5Qd9IT2v6b9VB83o=
 github.com/cjbassi/drawille-go v0.0.0-20190126131713-27dc511fe6fd h1:XtfPmj9tQRilnrEmI1HjQhxXWRhEM+m8CACtaMJE/kM=
 github.com/cjbassi/drawille-go v0.0.0-20190126131713-27dc511fe6fd/go.mod h1:vjcQJUZJYD3MeVGhtZXSMnCHfUNZxsyYzJt90eCYxK4=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=

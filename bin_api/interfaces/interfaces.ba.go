@@ -24,9 +24,9 @@ const (
 	// ModuleName is the name of this module.
 	ModuleName = "interface"
 	// APIVersion is the API version of this module.
-	APIVersion = "2.3.1"
+	APIVersion = "2.2.0"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0x6aab37be
+	VersionCrc = 0x672de521
 )
 
 // InterfaceIndex represents VPP binary API alias 'interface_index'.
@@ -435,7 +435,6 @@ func (*SwInterfaceDetails) GetMessageType() api.MessageType {
 
 // SwInterfaceDump represents VPP binary API message 'sw_interface_dump'.
 type SwInterfaceDump struct {
-	SwIfIndex       InterfaceIndex
 	NameFilterValid uint8
 	NameFilter      []byte `struc:"[49]byte"`
 }
@@ -444,7 +443,7 @@ func (*SwInterfaceDump) GetMessageName() string {
 	return "sw_interface_dump"
 }
 func (*SwInterfaceDump) GetCrcString() string {
-	return "052753c5"
+	return "63f5e3b7"
 }
 func (*SwInterfaceDump) GetMessageType() api.MessageType {
 	return api.RequestMessage

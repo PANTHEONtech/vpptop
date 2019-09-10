@@ -43,6 +43,9 @@ type ThreadData struct {
 func (*ThreadData) GetTypeName() string {
 	return "thread_data"
 }
+func (*ThreadData) GetCrcString() string {
+	return "0f57094e"
+}
 
 // AddNodeNext represents VPP binary API message 'add_node_next'.
 type AddNodeNext struct {
@@ -286,7 +289,7 @@ func (*ShowThreadsReply) GetMessageName() string {
 	return "show_threads_reply"
 }
 func (*ShowThreadsReply) GetCrcString() string {
-	return "f5e0b66f"
+	return "6942fb35"
 }
 func (*ShowThreadsReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -309,13 +312,13 @@ func (*ShowVersion) GetMessageType() api.MessageType {
 type ShowVersionReply struct {
 	Retval                int32
 	XXX_ProgramLen        uint32 `struc:"sizeof=Program"`
-	Program               string `binapi:",limit=32"`
+	Program               string
 	XXX_VersionLen        uint32 `struc:"sizeof=Version"`
-	Version               string `binapi:",limit=32"`
+	Version               string
 	XXX_BuildDateLen      uint32 `struc:"sizeof=BuildDate"`
-	BuildDate             string `binapi:",limit=32"`
+	BuildDate             string
 	XXX_BuildDirectoryLen uint32 `struc:"sizeof=BuildDirectory"`
-	BuildDirectory        string `binapi:",limit=256"`
+	BuildDirectory        string
 }
 
 func (*ShowVersionReply) GetMessageName() string {
