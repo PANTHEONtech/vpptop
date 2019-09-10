@@ -333,7 +333,7 @@ func (s *VPP) ClearErrorCounters() error {
 
 // Memory returns memory usage per thread.
 func (s *VPP) Memory() ([]string, error) {
-	req := &vpe.CliInband{Cmd: "show memory main-heap verbose"}
+	req := &vpe.CliInband{Cmd: "show memory verbose"}
 	reply := &vpe.CliInbandReply{}
 
 	if err := s.apiChan.SendRequest(req).ReceiveReply(reply); err != nil {
