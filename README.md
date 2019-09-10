@@ -14,7 +14,7 @@ Below is short demo preview of **vpptop** in action.
 
 |Branch|Info|
 |---|---|
-|[![vpp1908](https://img.shields.io/badge/branch-master-blue.svg?logo=git&logoColor=white)](https://github.com/PantheonTechnologies/vpptop/tree/vpp1908)| support for [vpp 19.08](https://packagecloud.io/fdio/1908)|
+|[![vpp1908](https://img.shields.io/badge/branch-vpp1908-blue.svg?logo=git&logoColor=white)](https://github.com/PantheonTechnologies/vpptop/tree/vpp1908)| support for [vpp 19.08](https://packagecloud.io/fdio/1908)|
 |[![vpp1904](https://img.shields.io/badge/branch-vpp1904-orange.svg?logo=git&logoColor=white)](https://github.com/PantheonTechnologies/vpptop/tree/vpp1904)|support for [vpp 19.04](https://packagecloud.io/fdio/1904)|
 
 ## Features
