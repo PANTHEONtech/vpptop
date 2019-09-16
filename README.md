@@ -10,6 +10,13 @@ Below is short demo preview of **vpptop** in action.
 
 [![preview](https://asciinema.org/a/NHODZM2ebcwWFPEEPcja8X19R.svg)](https://asciinema.org/a/NHODZM2ebcwWFPEEPcja8X19R)
 
+## Branches
+
+|Branch|Info|
+|---|---|
+|[![vpp1908](https://img.shields.io/badge/branch-vpp1908-blue.svg?logo=git&logoColor=white)](https://github.com/PantheonTechnologies/vpptop/tree/vpp1908)| support for [vpp 19.08](https://packagecloud.io/fdio/1908)|
+|[![vpp1904](https://img.shields.io/badge/branch-vpp1904-orange.svg?logo=git&logoColor=white)](https://github.com/PantheonTechnologies/vpptop/tree/vpp1904)|support for [vpp 19.04](https://packagecloud.io/fdio/1904)|
+
 ## Features
 
 Following VPP metrics are currently supported:
@@ -31,8 +38,9 @@ In order to install and run vpptop you need to install following requirements:
 To install VPP from packagecloud on Ubuntu 18.04, run following commands:
 
 ```sh
-curl -s https://packagecloud.io/install/repositories/fdio/1904/script.deb.sh | sudo bash
-sudo apt-get install -y vpp vpp-dev vpp-plugin-core
+export VPP_VER=19.04.1-release
+curl -s https://packagecloud.io/install/repositories/fdio/release/script.deb.sh | sudo bash
+sudo apt-get install -y vpp=$VPP_VER vpp-dev=$VPP_VER vpp-plugin-core=$VPP_VER libvppinfra-dev=$VPP_VER libvppinfra=$VPP_VER
 ```
 
 For more info about how to install VPP from packages, see: <https://wiki.fd.io/view/VPP/Installing_VPP_binaries_from_packages>
@@ -66,13 +74,17 @@ To start vpptop run:
 $ sudo -E vpptop
 ```
 
+vpptop also supports light terminal theme. To use darker colors which are better visible on light background, <br>
+you can set the `VPPTOP_THEME_LIGHT` environment variable.
+
+
 **NOTE:** The VPP should be running before starting vpptop!
 
 ### Keybindings
 
 1. Keyboard arrows ``Up, Down, Left, Right`` to switch tabs, scroll.
 2. ``Crtl-Space`` open/close menu for sort by column for the active table.
-3. ``/`` to filter the active table.
+3. ``/`` to filter the active table, `Enter` to keep the filter.
 4. ``Esc`` to cancel the previous operation.
 5. ``PgDn PgUp`` to skip pages in active table.
 6. ``Ctrl-C`` to clear counters for the active table.

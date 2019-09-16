@@ -76,7 +76,7 @@ type Table struct {
 }
 
 // NewTable returns a default instance of xtui.Table.
-func NewTable() *Table {
+func NewTable(lightTheme bool) *Table {
 	t := &Table{
 		Table:        widgets.NewTable(),
 		out:          nil,
@@ -91,7 +91,11 @@ func NewTable() *Table {
 		rowsPerEntry: 1,
 	}
 	// Default colors
-	t.Colors.Text = termui.ColorWhite
+	if lightTheme {
+		t.Colors.Text = termui.ColorBlack
+	} else {
+		t.Colors.Text = termui.ColorWhite
+	}
 	t.Colors.SelectedRowFg = termui.ColorBlack
 	t.Colors.SelectedRowBg = termui.ColorGreen
 	return t
