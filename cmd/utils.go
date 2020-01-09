@@ -18,6 +18,7 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"os"
@@ -32,22 +33,18 @@ import (
 
 // startClient is a blocking call that starts
 // the terminal frontend for displaying VPP metrics.
-func startClient(socket, raddr, logFile string) error {
+func startClient(socket, raddr string, file io.Writer) error {
 	var lightTheme bool
 	if _, lightTheme = os.LookupEnv("VPPTOP_THEME_LIGHT"); lightTheme {
 		gui.SetLightTheme()
 	}
-	logs, err := os.Create(logFile)
-	if err != nil {
-		return fmt.Errorf("error occured while creating file: %v", err)
-	}
-	defer logs.Close()
 
 	app := client.NewApp(lightTheme)
 	if err := app.Init(socket, raddr); err != nil {
 		return fmt.Errorf("error occurred during client init: %v", err)
 	}
-	log.SetOutput(logs)
+
+	log.SetOutput(file)
 	app.Run()
 	return nil
 }
@@ -81,6 +78,7 @@ func findNode(nodes []v1.Node, name string) (v1.Node, bool) {
 			}
 		}
 	}
+
 	return v1.Node{}, false
 }
 
@@ -99,6 +97,7 @@ func getNodes(kubeconfig string) []v1.Node {
 	if err != nil {
 		return nil
 	}
+
 	return nodeList.Items
 }
 

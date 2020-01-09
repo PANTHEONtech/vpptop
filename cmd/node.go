@@ -18,13 +18,16 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 	"log"
+	"os"
 	"path/filepath"
 	"time"
 
 	"git.fd.io/govpp.git/adapter/socketclient"
 	"git.fd.io/govpp.git/adapter/statsclient"
 	"git.fd.io/govpp.git/proxy"
+	"github.com/ligato/cn-infra/logging"
 	"github.com/spf13/cobra"
 )
 
@@ -35,6 +38,16 @@ var nodeCmd = &cobra.Command{
 		if len(args) < 1 {
 			return errors.New("no node specified")
 		}
+
+		logs, err := os.Create("remote.log")
+		if err != nil {
+			return fmt.Errorf("error occured while creating file: %v", err)
+		}
+
+		defer logs.Close()
+
+		logging.DefaultLogger.SetOutput(logs)
+
 		kubeconfig, err := cmd.Flags().GetString("kubeconfig")
 		if err != nil {
 			return err
@@ -42,8 +55,9 @@ var nodeCmd = &cobra.Command{
 
 		ipaddr, found := resolveNode(kubeconfig, args[0])
 		if found {
-			return startClient("", ipaddr+":"+"7878", "remote.log")
+			return startClient("", ipaddr+":"+"7878", logs)
 		}
+
 		log.Println("failed to resolve addr:", args[0])
 
 		raddr, err := cmd.Flags().GetString("addr")
@@ -52,6 +66,7 @@ var nodeCmd = &cobra.Command{
 		}
 
 		log.Println("trying to connect to a local server at:", raddr)
+
 		for i := 0; i < 3; i++ {
 			if _, err = proxy.Connect(raddr); err == nil {
 				break
@@ -62,14 +77,17 @@ var nodeCmd = &cobra.Command{
 		if err != nil {
 			log.Println("no server found")
 			log.Println("starting local server at:", raddr)
+
 			binapiSocket, err := cmd.Flags().GetString("binapi-socket")
 			if err != nil {
 				return err
 			}
+
 			statsSocket, err := cmd.Flags().GetString("stats-socket")
 			if err != nil {
 				return err
 			}
+
 			go func() {
 				p, err := proxy.NewServer()
 				if err != nil {
@@ -82,17 +100,20 @@ var nodeCmd = &cobra.Command{
 				if err := p.ConnectStats(statsAdapter); err != nil {
 					log.Fatalln("connecting to stats failed:", err)
 				}
+
 				defer p.DisconnectStats()
 
 				if err := p.ConnectBinapi(binapiAdapter); err != nil {
 					log.Fatalln("connecting to binapi failed:", err)
 				}
+
 				defer p.DisconnectBinapi()
 
 				p.ListenAndServe(raddr)
 			}()
 		}
-		return startClient("", raddr, "remote.log")
+
+		return startClient("", raddr, logs)
 	},
 }
 
@@ -102,6 +123,7 @@ func init() {
 	} else {
 		nodeCmd.Flags().StringP("kubeconfig", "c", "", "absolute path to the kubeconfig")
 	}
+
 	nodeCmd.Flags().String("binapi-socket", socketclient.DefaultSocketName, "Path to VPP binapi socket")
 	nodeCmd.Flags().String("stats-socket", statsclient.DefaultSocketName, "Path to VPP stats socket")
 	nodeCmd.Flags().String("addr", ":9191", "Address on which proxy serves RPC.")

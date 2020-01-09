@@ -207,6 +207,7 @@ func (app *App) Init(soc, raddr string) error {
 	if err != nil {
 		return err
 	}
+
 	app.gui.SetVersion(v)
 
 	return nil
@@ -216,6 +217,7 @@ func (app *App) Init(soc, raddr string) error {
 func (app *App) Run() {
 	var ctx context.Context
 	ctx, app.cancel = context.WithCancel(context.Background())
+
 	currTab := func() int {
 		app.tabLock.Lock()
 		defer app.tabLock.Unlock()
@@ -227,6 +229,7 @@ func (app *App) Run() {
 
 	go func() {
 		updateTicker := time.NewTicker(1 * time.Second).C
+
 		for {
 			select {
 			case <-updateTicker:
@@ -234,52 +237,63 @@ func (app *App) Run() {
 
 				switch currTab() {
 				case Interfaces:
-					ifaces, err := app.vpp.GetInterfaces()
+					ifaces, err := app.vpp.GetInterfaces(ctx)
 					if err != nil {
 						log.Printf("error occured while polling interface stats: %v\n", err)
 					}
+
 					app.sortLock.Lock()
 					s := app.sortBy[Interfaces]
 					app.sortLock.Unlock()
 
 					app.sortInterfaceStats(ifaces, s.field, s.asc)
 					app.gui.ViewAtTab(Interfaces).Update(app.formatInterfaces(ifaces))
+
 				case Nodes:
-					nodes, err := app.vpp.GetNodes()
+					nodes, err := app.vpp.GetNodes(ctx)
 					if err != nil {
 						log.Printf("error occured while polling nodes stats: %v\n", err)
 					}
+
 					app.sortLock.Lock()
 					s := app.sortBy[Nodes]
 					app.sortLock.Unlock()
 
 					app.sortNodeStats(nodes, s.field, s.asc)
 					app.gui.ViewAtTab(Nodes).Update(app.formatNodes(nodes))
+
 				case Errors:
-					errors, err := app.vpp.GetErrors()
+					errors, err := app.vpp.GetErrors(ctx)
 					if err != nil {
 						log.Printf("error occured while polling errors stats: %v\n", err)
 					}
+
 					app.sortLock.Lock()
 					s := app.sortBy[Errors]
 					app.sortLock.Unlock()
 
 					app.sortErrorStats(errors, s.field, s.asc)
 					app.gui.ViewAtTab(Errors).Update(app.formatErrors(errors))
+
 				case Memory:
-					memstats, err := app.vpp.Memory()
+					memstats, err := app.vpp.Memory(ctx)
 					if err != nil {
 						log.Printf("error occured while polling memory stats: %v\n", err)
 					}
+
 					app.gui.ViewAtTab(Memory).Update(app.formatMemstats(memstats))
+
 				case Threads:
-					threads, err := app.vpp.Threads()
+					threads, err := app.vpp.Threads(ctx)
 					if err != nil {
 						log.Printf("error occured while polling threads stats: %v\n", err)
 					}
+
 					app.gui.ViewAtTab(Threads).Update(app.formatThreads(threads))
 				}
+
 				app.vppLock.Unlock()
+
 			case <-ctx.Done():
 				app.wg.Done()
 				return
@@ -298,16 +312,16 @@ func (app *App) Run() {
 
 			switch tab {
 			case Interfaces:
-				if err := app.vpp.ClearIfaceCounters(); err != nil {
+				if err := app.vpp.ClearIfaceCounters(ctx); err != nil {
 					log.Printf("error occured while clearing interface stats: %v\n", err)
 				}
 				app.IfCache = nil
 			case Nodes:
-				if err := app.vpp.ClearRuntimeCounters(); err != nil {
+				if err := app.vpp.ClearRuntimeCounters(ctx); err != nil {
 					log.Printf("error occured while clearing node stats: %v\n", err)
 				}
 			case Errors:
-				if err := app.vpp.ClearErrorCounters(); err != nil {
+				if err := app.vpp.ClearErrorCounters(ctx); err != nil {
 					log.Printf("error occured while clearing error stats: %v\n", err)
 				}
 			}
@@ -357,6 +371,7 @@ func (app *App) Run() {
 // formatInterfaces formats interface stats to xtui.TableRows
 func (app *App) formatInterfaces(ifaces []stats.Interface) xtui.TableRows {
 	nameToIdx := make(map[string]int)
+
 	for i, iface := range app.IfCache {
 		nameToIdx[iface.InterfaceName] = i
 	}
@@ -389,6 +404,7 @@ func (app *App) formatInterfaces(ifaces []stats.Interface) xtui.TableRows {
 			rxpps = iface.Rx.Packets - app.IfCache[idx].Rx.Packets
 			txpps = iface.Tx.Packets - app.IfCache[idx].Tx.Packets
 		}
+
 		rows[RowsPerIface*i+1] = []string{xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, "Packets/s", fmt.Sprint(rxpps), "Packets/s", fmt.Sprint(txpps), xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell}
 		rows[RowsPerIface*i+2] = []string{xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, "Bytes", fmt.Sprint(iface.Rx.Bytes), "Bytes", fmt.Sprint(iface.Tx.Bytes), xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell}
 		rows[RowsPerIface*i+3] = []string{xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, "Bytes/s", fmt.Sprint(rxbbs), "Bytes/s", fmt.Sprint(txbbs), xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell}
@@ -405,12 +421,14 @@ func (app *App) formatInterfaces(ifaces []stats.Interface) xtui.TableRows {
 		row := RowsPerIface*i + 1
 		ip := len(iface.IPAddrs)
 		maxRow := RowsPerIface*i + RowsPerIface // last row of each entry.
+
 		for ip > 0 && row < maxRow {
 			rows[row][0] = strings.Split(iface.IPAddrs[ip-1], "/")[0]
 			ip--
 			row++
 		}
 	}
+
 	app.IfCache = ifaces
 
 	return rows
@@ -419,21 +437,26 @@ func (app *App) formatInterfaces(ifaces []stats.Interface) xtui.TableRows {
 // formatNodes formats nodes stats to xtui.TableRows
 func (app *App) formatNodes(nodes []stats.Node) xtui.TableRows {
 	rows := make(xtui.TableRows, len(nodes))
+
 	for i, node := range nodes {
 		rows[i] = strings.Split(fmt.Sprintf("%s %d %d %d %d %d %.2f", node.Name, node.Index, uint64(node.Clocks), node.Vectors, node.Calls, node.Suspends, node.VectorsPerCall), " ")
 	}
+
 	return rows
 }
 
 // formatErrors formats error stats to xtui.TableRows
 func (app *App) formatErrors(errors []stats.Error) xtui.TableRows {
 	rows := make(xtui.TableRows, len(errors))
+
 	for i, errorC := range errors {
 		rows[i] = strings.Split(fmt.Sprintf("%d;%s;%s", errorC.Value, errorC.Node, errorC.Name), ";")
 	}
+
 	if len(rows) == 0 {
 		rows = append(rows, []string{"", "", ""})
 	}
+
 	return rows
 
 }
@@ -445,6 +468,7 @@ func (app *App) formatMemstats(memstats []string) xtui.TableRows {
 	const rowsPerEntry = 7
 	count := len(memstats) / rowsPerEntry         // number of entries.
 	rows := make([][]string, RowsPerMemory*count) // our view will have 6 rows per entry.
+
 	for i := 0; i < count; i++ {
 		rows[RowsPerMemory*i] = []string{memstats[rowsPerEntry*i], memstats[rowsPerEntry*i+1]}
 		rows[RowsPerMemory*i+1] = []string{xtui.EmptyCell, memstats[rowsPerEntry*i+2]}
@@ -454,14 +478,17 @@ func (app *App) formatMemstats(memstats []string) xtui.TableRows {
 		rows[RowsPerMemory*i+5] = []string{xtui.EmptyCell, memstats[rowsPerEntry*i+6]}
 		rows[RowsPerMemory*i+6] = []string{xtui.EmptyCell, xtui.EmptyCell}
 	}
+
 	return rows
 }
 
 // formatThreads formats memory stats to xtui.TableRows
 func (app *App) formatThreads(threads []stats.ThreadData) xtui.TableRows {
 	rows := make(xtui.TableRows, len(threads))
+
 	for i, thread := range threads {
 		rows[i] = strings.Split(fmt.Sprintf("%d %s %s %d %d %d %d", thread.ID, thread.Name, thread.Type, thread.PID, thread.CPUID, thread.Core, thread.CPUSocket), " ")
 	}
+
 	return rows
 }

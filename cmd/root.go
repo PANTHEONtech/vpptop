@@ -17,7 +17,9 @@
 package cmd
 
 import (
+	"fmt"
 	"log"
+	"os"
 
 	"github.com/PantheonTechnologies/vpptop/stats"
 	"github.com/spf13/cobra"
@@ -40,11 +42,20 @@ Thread info:    name, type, PID...`,
 		if err != nil {
 			return err
 		}
+
 		logFile, err := cmd.Flags().GetString("log")
 		if err != nil {
 			return err
 		}
-		return startClient(socket, "", logFile)
+
+		logs, err := os.Create(logFile)
+		if err != nil {
+			return fmt.Errorf("error occured while creating file: %v", err)
+		}
+
+		defer logs.Close()
+
+		return startClient(socket, "", logs)
 	},
 }
 
