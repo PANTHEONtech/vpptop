@@ -39,7 +39,7 @@ In order to install and run vpptop you need to install following requirements:
 ### Install VPP
 
 To install VPP from packagecloud on Ubuntu 18.04, run following commands 
-where you replace `<VERSION>` with either `19.04`, `19.08`, or `master` for the latest version:
+where you replace `<VERSION>` with either `1904`, `1908`, or `master` for the latest version:
 
 ```sh
 curl -s https://packagecloud.io/install/repositories/fdio/<VERSION>/script.deb.sh | sudo bash
