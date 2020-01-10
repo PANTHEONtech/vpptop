@@ -51,13 +51,13 @@ import (
 	vpe2001 "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/vpe"
 	vpe2001_324 "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/vpe"
 
-	// import for handler ifplugin registration
+	// import for handler ifplugin handler registration
 	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls/vpp1904"
 	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls/vpp1908"
 	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls/vpp2001"
 	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls/vpp2001_324"
 
-	// import for handler telemetry registration
+	// import for handler telemetry handler registration
 	_ "go.ligato.io/vpp-agent/v2/plugins/telemetry/vppcalls/vpp1904"
 	_ "go.ligato.io/vpp-agent/v2/plugins/telemetry/vppcalls/vpp1908"
 	_ "go.ligato.io/vpp-agent/v2/plugins/telemetry/vppcalls/vpp2001"
@@ -82,12 +82,14 @@ type (
 		vppConn   *core.Connection
 	}
 
+	// VPP provides statistics about vpp
+	// such as runtime counters, interface counters,
+	// error counters...
 	VPP struct {
-		newclient *vppClient
-		client    adapter.StatsAPI
-		apiChan   api.Channel
+		vppclient   *vppClient
+		statsClient adapter.StatsAPI
+		apiChan     api.Channel
 
-		// vpp calls
 		interfaceHandler ifplugincalls.InterfaceVppAPI
 		telemetryHandler telemetrycalls.TelemetryVppAPI
 		govppHandler     govppcalls.VppCoreAPI
@@ -158,6 +160,7 @@ func (c *vppClient) IsPluginLoaded(plugin string) bool {
 	return false
 }
 
+// ConnectRemote connects vpptop to a remote proxy providing vpp statistics.
 func (s *VPP) ConnectRemote(raddr string) error {
 	s.lastErrorCounters = make(map[string]uint64)
 
@@ -190,7 +193,7 @@ func (s *VPP) ConnectRemote(raddr string) error {
 		return err
 	}
 
-	s.newclient = &vppClient{
+	s.vppclient = &vppClient{
 		client:    client,
 		statsConn: statsConn,
 	}
@@ -200,7 +203,7 @@ func (s *VPP) ConnectRemote(raddr string) error {
 		gob.Register(msg)
 	}
 
-	s.govppHandler, err = govppcalls.NewHandler(s.newclient)
+	s.govppHandler, err = govppcalls.NewHandler(s.vppclient)
 	if err != nil {
 		return err
 	}
@@ -222,15 +225,15 @@ func (s *VPP) ConnectRemote(raddr string) error {
 		return fmt.Errorf("failed to get vpp version: %v", err)
 	}
 
-	s.newclient.vppInfo = govppmux.VPPInfo{
+	s.vppclient.vppInfo = govppmux.VPPInfo{
 		Connected:   true,
 		VersionInfo: *s.vppVersion,
 		SessionInfo: *session,
 		Plugins:     plugins,
 	}
 
-	s.interfaceHandler = ifplugincalls.CompatibleInterfaceVppHandler(s.newclient, logrus.NewLogger(""))
-	s.telemetryHandler = telemetrycalls.CompatibleTelemetryHandler(s.newclient)
+	s.interfaceHandler = ifplugincalls.CompatibleInterfaceVppHandler(s.vppclient, logrus.NewLogger(""))
+	s.telemetryHandler = telemetrycalls.CompatibleTelemetryHandler(s.vppclient)
 
 	return nil
 }
@@ -239,9 +242,9 @@ func (s *VPP) ConnectRemote(raddr string) error {
 func (s *VPP) Connect(soc string) error {
 	s.lastErrorCounters = make(map[string]uint64)
 
-	s.client = statsclient.NewStatsClient(soc)
+	s.statsClient = statsclient.NewStatsClient(soc)
 
-	statsConn, err := core.ConnectStats(s.client)
+	statsConn, err := core.ConnectStats(s.statsClient)
 	if err != nil {
 		return fmt.Errorf("connection to stats api failed: %v", err)
 	}
@@ -261,12 +264,12 @@ func (s *VPP) Connect(soc string) error {
 		return err
 	}
 
-	s.newclient = &vppClient{
+	s.vppclient = &vppClient{
 		vppConn:   vppConn,
 		statsConn: statsConn,
 	}
 
-	s.govppHandler, err = govppcalls.NewHandler(s.newclient)
+	s.govppHandler, err = govppcalls.NewHandler(s.vppclient)
 	if err != nil {
 		return err
 	}
@@ -288,15 +291,15 @@ func (s *VPP) Connect(soc string) error {
 		return fmt.Errorf("failed to get vpp version: %v", err)
 	}
 
-	s.newclient.vppInfo = govppmux.VPPInfo{
+	s.vppclient.vppInfo = govppmux.VPPInfo{
 		Connected:   true,
 		VersionInfo: *s.vppVersion,
 		SessionInfo: *session,
 		Plugins:     plugins,
 	}
 
-	s.interfaceHandler = ifplugincalls.CompatibleInterfaceVppHandler(s.newclient, logrus.NewLogger(""))
-	s.telemetryHandler = telemetrycalls.CompatibleTelemetryHandler(s.newclient)
+	s.interfaceHandler = ifplugincalls.CompatibleInterfaceVppHandler(s.vppclient, logrus.NewLogger(""))
+	s.telemetryHandler = telemetrycalls.CompatibleTelemetryHandler(s.vppclient)
 
 	return nil
 }
@@ -310,18 +313,18 @@ func (s *VPP) Version() (string, error) {
 func (s *VPP) Disconnect() {
 	s.apiChan.Close()
 
-	if s.newclient != nil {
-		if s.newclient.vppConn != nil {
-			s.newclient.vppConn.Disconnect()
+	if s.vppclient != nil {
+		if s.vppclient.vppConn != nil {
+			s.vppclient.vppConn.Disconnect()
 		}
 
-		if s.newclient.apiChan != nil {
-			s.newclient.apiChan.Close()
+		if s.vppclient.apiChan != nil {
+			s.vppclient.apiChan.Close()
 		}
 	}
 
-	if s.client != nil {
-		s.client.Disconnect()
+	if s.statsClient != nil {
+		s.statsClient.Disconnect()
 	}
 }
 
@@ -567,6 +570,7 @@ func (s *VPP) threads2001() ([]ThreadData, error) {
 	return result, nil
 }
 
+// updateLastErrors clears the error counters.
 func (s *VPP) updateLastErrors(ctx context.Context) {
 	counters, err := s.telemetryHandler.GetNodeCounters(ctx)
 	if err != nil {
