@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package main
+package client
 
 import (
 	"context"
@@ -24,7 +24,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/PantheonTechnologies/vpptop/bin_api/vpe"
 	"github.com/PantheonTechnologies/vpptop/gui"
 	"github.com/PantheonTechnologies/vpptop/gui/views"
 	"github.com/PantheonTechnologies/vpptop/gui/xtui"
@@ -43,10 +42,6 @@ const (
 const (
 	// RowsPerIface represents number of rows in the xtui table per interface
 	RowsPerIface = 11
-	// RowsPerNode represents number of rows in the xtui table per node
-	RowsPerNode = 1
-	// RowsPerError represents number of rows in the xtui table per error
-	RowsPerError = 1
 	// RowsPerMemory represents number of rows in the xtui table per memory.
 	RowsPerMemory = 8
 )
@@ -77,7 +72,7 @@ type App struct {
 	cancel   context.CancelFunc
 }
 
-func NewApp() *App {
+func NewApp(lightTheme bool) *App {
 	app := new(App)
 
 	app.sortLock = new(sync.Mutex)
@@ -151,7 +146,7 @@ func NewApp() *App {
 				},
 				xtui.TableRows{{"NodeName", "NodeIndex", "Clocks", "Vectors", "Calls", "Suspends", "Vectors/Calls"}},
 				NodeStatNodeName,
-				RowsPerNode,
+				1,
 				[]int{50, 10, views.TableColResizedWithWindow, views.TableColResizedWithWindow, views.TableColResizedWithWindow, views.TableColResizedWithWindow, 22},
 				lightTheme,
 			),
@@ -160,7 +155,7 @@ func NewApp() *App {
 				[]string{"Counter", "Node", "Reason"},
 				xtui.TableRows{{"Counter", "Node", "Reason"}},
 				ErrorStatErrorNodeName,
-				RowsPerError,
+				1,
 				nil,
 				lightTheme,
 			),
@@ -168,7 +163,7 @@ func NewApp() *App {
 			views.NewTableView(
 				[]string{},
 				xtui.TableRows{{"Thread/ID/Name", "Current memory usage per Thread"}},
-				0,
+				MemoryStatName,
 				RowsPerMemory,
 				[]int{30, views.TableColResizedWithWindow},
 				lightTheme,
@@ -192,22 +187,27 @@ func NewApp() *App {
 }
 
 // Init initializes app.
-func (app *App) Init(soc string) error {
-	// connect to vpp.
-	if err := app.vpp.Connect(soc); err != nil {
-		return err
+func (app *App) Init(soc, raddr string) error {
+	switch raddr {
+	case "":
+		if err := app.vpp.Connect(soc); err != nil {
+			return err
+		}
+	default:
+		if err := app.vpp.ConnectRemote(raddr); err != nil {
+			return err
+		}
 	}
 
-	// init gui.
 	if err := app.gui.Init(); err != nil {
 		return err
 	}
 
-	// set the vpp version.
 	v, err := app.vpp.Version()
 	if err != nil {
 		return err
 	}
+
 	app.gui.SetVersion(v)
 
 	return nil
@@ -226,8 +226,10 @@ func (app *App) Run() {
 
 	app.wg.Add(1)
 
+
 	go func() {
 		updateTicker := time.NewTicker(1 * time.Second).C
+
 		for {
 			select {
 			case <-updateTicker:
@@ -235,52 +237,63 @@ func (app *App) Run() {
 
 				switch currTab() {
 				case Interfaces:
-					ifaces, err := app.vpp.GetInterfaces()
+					ifaces, err := app.vpp.GetInterfaces(ctx)
 					if err != nil {
 						log.Printf("error occured while polling interface stats: %v\n", err)
 					}
+
 					app.sortLock.Lock()
 					s := app.sortBy[Interfaces]
 					app.sortLock.Unlock()
 
 					app.sortInterfaceStats(ifaces, s.field, s.asc)
 					app.gui.ViewAtTab(Interfaces).Update(app.formatInterfaces(ifaces))
+
 				case Nodes:
-					nodes, err := app.vpp.GetNodes()
+					nodes, err := app.vpp.GetNodes(ctx)
 					if err != nil {
 						log.Printf("error occured while polling nodes stats: %v\n", err)
 					}
+
 					app.sortLock.Lock()
 					s := app.sortBy[Nodes]
 					app.sortLock.Unlock()
 
 					app.sortNodeStats(nodes, s.field, s.asc)
 					app.gui.ViewAtTab(Nodes).Update(app.formatNodes(nodes))
+
 				case Errors:
-					errors, err := app.vpp.GetErrors()
+					errors, err := app.vpp.GetErrors(ctx)
 					if err != nil {
 						log.Printf("error occured while polling errors stats: %v\n", err)
 					}
+
 					app.sortLock.Lock()
 					s := app.sortBy[Errors]
 					app.sortLock.Unlock()
 
 					app.sortErrorStats(errors, s.field, s.asc)
 					app.gui.ViewAtTab(Errors).Update(app.formatErrors(errors))
+
 				case Memory:
-					memstats, err := app.vpp.Memory()
+					memstats, err := app.vpp.Memory(ctx)
 					if err != nil {
 						log.Printf("error occured while polling memory stats: %v\n", err)
 					}
+
 					app.gui.ViewAtTab(Memory).Update(app.formatMemstats(memstats))
+
 				case Threads:
-					threads, err := app.vpp.Threads()
+					threads, err := app.vpp.Threads(ctx)
 					if err != nil {
 						log.Printf("error occured while polling threads stats: %v\n", err)
 					}
+
 					app.gui.ViewAtTab(Threads).Update(app.formatThreads(threads))
 				}
+
 				app.vppLock.Unlock()
+
 			case <-ctx.Done():
 				app.wg.Done()
 				return
@@ -299,20 +312,19 @@ func (app *App) Run() {
 
 			switch tab {
 			case Interfaces:
-				if err := app.vpp.ClearIfaceCounters(); err != nil {
+				if err := app.vpp.ClearIfaceCounters(ctx); err != nil {
 					log.Printf("error occured while clearing interface stats: %v\n", err)
 				}
 				app.IfCache = nil
 			case Nodes:
-				if err := app.vpp.ClearRuntimeCounters(); err != nil {
+				if err := app.vpp.ClearRuntimeCounters(ctx); err != nil {
 					log.Printf("error occured while clearing node stats: %v\n", err)
 				}
 			case Errors:
-				if err := app.vpp.ClearErrorCounters(); err != nil {
+				if err := app.vpp.ClearErrorCounters(ctx); err != nil {
 					log.Printf("error occured while clearing error stats: %v\n", err)
 				}
 			}
-
 		}()
 	})
 
@@ -358,11 +370,8 @@ func (app *App) Run() {
 
 // formatInterfaces formats interface stats to xtui.TableRows
 func (app *App) formatInterfaces(ifaces []stats.Interface) xtui.TableRows {
-	// Since the updated interfaces could have changed
-	// (new interfaces could be created, or some interfaces could be deleted)
-	// build a lookup table to be able to check for common interfaces
-	// to be able to calculate bytes/s, packets/s
 	nameToIdx := make(map[string]int)
+
 	for i, iface := range app.IfCache {
 		nameToIdx[iface.InterfaceName] = i
 	}
@@ -372,11 +381,11 @@ func (app *App) formatInterfaces(ifaces []stats.Interface) xtui.TableRows {
 		rows[RowsPerIface*i] = append(rows[RowsPerIface*i], iface.InterfaceName)
 		rows[RowsPerIface*i] = append(rows[RowsPerIface*i], fmt.Sprint(iface.InterfaceIndex))
 		rows[RowsPerIface*i] = append(rows[RowsPerIface*i], iface.State)
-		rows[RowsPerIface*i] = append(rows[RowsPerIface*i], fmt.Sprintf("%d/%d/%d/%d", iface.Mtu[0], iface.Mtu[1], iface.Mtu[2], iface.Mtu[3]))
+		rows[RowsPerIface*i] = append(rows[RowsPerIface*i], fmt.Sprintf("%d/%d/%d/%d", iface.MTU[0], iface.MTU[1], iface.MTU[2], iface.MTU[3]))
 		rows[RowsPerIface*i] = append(rows[RowsPerIface*i], "Packets")
-		rows[RowsPerIface*i] = append(rows[RowsPerIface*i], fmt.Sprint(iface.RxPackets))
+		rows[RowsPerIface*i] = append(rows[RowsPerIface*i], fmt.Sprint(iface.Rx.Packets))
 		rows[RowsPerIface*i] = append(rows[RowsPerIface*i], "Packets")
-		rows[RowsPerIface*i] = append(rows[RowsPerIface*i], fmt.Sprint(iface.TxPackets))
+		rows[RowsPerIface*i] = append(rows[RowsPerIface*i], fmt.Sprint(iface.Tx.Packets))
 		rows[RowsPerIface*i] = append(rows[RowsPerIface*i], fmt.Sprint(iface.Drops))
 		rows[RowsPerIface*i] = append(rows[RowsPerIface*i], fmt.Sprint(iface.Punts))
 		rows[RowsPerIface*i] = append(rows[RowsPerIface*i], fmt.Sprint(iface.IP4))
@@ -389,19 +398,20 @@ func (app *App) formatInterfaces(ifaces []stats.Interface) xtui.TableRows {
 
 		if idx, ok := nameToIdx[iface.InterfaceName]; ok {
 			// Calculate bytes/s, packets/s
-			rxbbs = iface.RxBytes - app.IfCache[idx].RxBytes
-			txbbs = iface.TxBytes - app.IfCache[idx].TxBytes
+			rxbbs = iface.Rx.Bytes - app.IfCache[idx].Rx.Bytes
+			txbbs = iface.Tx.Bytes - app.IfCache[idx].Tx.Bytes
 
-			rxpps = iface.RxPackets - app.IfCache[idx].RxPackets
-			txpps = iface.TxPackets - app.IfCache[idx].TxPackets
+			rxpps = iface.Rx.Packets - app.IfCache[idx].Rx.Packets
+			txpps = iface.Tx.Packets - app.IfCache[idx].Tx.Packets
 		}
+
 		rows[RowsPerIface*i+1] = []string{xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, "Packets/s", fmt.Sprint(rxpps), "Packets/s", fmt.Sprint(txpps), xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell}
-		rows[RowsPerIface*i+2] = []string{xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, "Bytes", fmt.Sprint(iface.RxBytes), "Bytes", fmt.Sprint(iface.TxBytes), xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell}
+		rows[RowsPerIface*i+2] = []string{xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, "Bytes", fmt.Sprint(iface.Rx.Bytes), "Bytes", fmt.Sprint(iface.Tx.Bytes), xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell}
 		rows[RowsPerIface*i+3] = []string{xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, "Bytes/s", fmt.Sprint(rxbbs), "Bytes/s", fmt.Sprint(txbbs), xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell}
 		rows[RowsPerIface*i+4] = []string{xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, "Errors", fmt.Sprint(iface.RxErrors), "Errors", fmt.Sprint(iface.TxErrors), xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell}
-		rows[RowsPerIface*i+5] = []string{xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, "Unicast", fmt.Sprintf("%d/%d", iface.RxUnicast[0], iface.RxUnicast[1]), "UnicastMiss", fmt.Sprintf("%d/%d", iface.TxUnicastMiss[0], iface.TxUnicastMiss[1]), xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell}
-		rows[RowsPerIface*i+6] = []string{xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, "Multicast", fmt.Sprintf("%d/%d", iface.RxMulticast[0], iface.RxMulticast[1]), "Multicast", fmt.Sprintf("%d/%d", iface.TxMulticast[0], iface.TxMulticast[1]), xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell}
-		rows[RowsPerIface*i+7] = []string{xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, "Broadcast", fmt.Sprintf("%d/%d", iface.RxBroadcast[0], iface.RxBroadcast[1]), "Broadcast", fmt.Sprintf("%d/%d", iface.TxBroadcast[0], iface.TxBroadcast[1]), xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell}
+		rows[RowsPerIface*i+5] = []string{xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, "Unicast", fmt.Sprintf("%d/%d", iface.RxUnicast.Packets, iface.RxUnicast.Bytes), "UnicastMiss", fmt.Sprintf("%d/%d", iface.TxUnicast.Packets, iface.TxUnicast.Bytes), xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell}
+		rows[RowsPerIface*i+6] = []string{xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, "Multicast", fmt.Sprintf("%d/%d", iface.RxMulticast.Packets, iface.RxMulticast.Bytes), "Multicast", fmt.Sprintf("%d/%d", iface.TxMulticast.Packets, iface.TxMulticast.Bytes), xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell}
+		rows[RowsPerIface*i+7] = []string{xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, "Broadcast", fmt.Sprintf("%d/%d", iface.RxBroadcast.Packets, iface.RxBroadcast.Bytes), "Broadcast", fmt.Sprintf("%d/%d", iface.TxBroadcast.Packets, iface.TxBroadcast.Bytes), xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell}
 		rows[RowsPerIface*i+8] = []string{xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, "NoBuf", fmt.Sprint(iface.RxNoBuf), xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell}
 		rows[RowsPerIface*i+9] = []string{xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, "Miss", fmt.Sprint(iface.RxMiss), xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell}
 		rows[RowsPerIface*i+10] = []string{xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell}
@@ -409,24 +419,16 @@ func (app *App) formatInterfaces(ifaces []stats.Interface) xtui.TableRows {
 		// start from the second row, the first is taken up
 		// by the interface name.
 		row := RowsPerIface*i + 1
-
-		ip4Len := len(iface.IPv4)
-		ip6Len := len(iface.IPv6)
-
+		ip := len(iface.IPAddrs)
 		maxRow := RowsPerIface*i + RowsPerIface // last row of each entry.
-		// fill Ipv4 addresses
-		for ip4Len > 0 && row < maxRow {
-			rows[row][0] = iface.IPv4[ip4Len-1]
-			ip4Len--
-			row++
-		}
-		// fill Ipv6 addresses
-		for ip6Len > 0 && row < maxRow {
-			rows[row][0] = iface.IPv6[ip6Len-1]
-			ip6Len--
+
+		for ip > 0 && row < maxRow {
+			rows[row][0] = strings.Split(iface.IPAddrs[ip-1], "/")[0]
+			ip--
 			row++
 		}
 	}
+
 	app.IfCache = ifaces
 
 	return rows
@@ -435,19 +437,28 @@ func (app *App) formatInterfaces(ifaces []stats.Interface) xtui.TableRows {
 // formatNodes formats nodes stats to xtui.TableRows
 func (app *App) formatNodes(nodes []stats.Node) xtui.TableRows {
 	rows := make(xtui.TableRows, len(nodes))
+
 	for i, node := range nodes {
-		rows[i] = strings.Split(fmt.Sprintf("%s %d %d %d %d %d %.2f", node.NodeName, node.NodeIndex, node.Clocks, node.Vectors, node.Calls, node.Suspends, node.VC), " ")
+		rows[i] = strings.Split(fmt.Sprintf("%s %d %d %d %d %d %.2f", node.Name, node.Index, uint64(node.Clocks), node.Vectors, node.Calls, node.Suspends, node.VectorsPerCall), " ")
 	}
+
 	return rows
 }
 
 // formatErrors formats error stats to xtui.TableRows
 func (app *App) formatErrors(errors []stats.Error) xtui.TableRows {
 	rows := make(xtui.TableRows, len(errors))
+
 	for i, errorC := range errors {
-		rows[i] = strings.Split(fmt.Sprintf("%d/%s/%s", errorC.Value, errorC.NodeName, errorC.Reason), "/")
+		rows[i] = strings.Split(fmt.Sprintf("%d;%s;%s", errorC.Value, errorC.Node, errorC.Name), ";")
 	}
+
+	if len(rows) == 0 {
+		rows = append(rows, []string{"", "", ""})
+	}
+
 	return rows
+
 }
 
 // formatMemstats formats memory stats to xtui.TableRows
@@ -457,6 +468,7 @@ func (app *App) formatMemstats(memstats []string) xtui.TableRows {
 	const rowsPerEntry = 7
 	count := len(memstats) / rowsPerEntry         // number of entries.
 	rows := make([][]string, RowsPerMemory*count) // our view will have 6 rows per entry.
+
 	for i := 0; i < count; i++ {
 		rows[RowsPerMemory*i] = []string{memstats[rowsPerEntry*i], memstats[rowsPerEntry*i+1]}
 		rows[RowsPerMemory*i+1] = []string{xtui.EmptyCell, memstats[rowsPerEntry*i+2]}
@@ -466,14 +478,17 @@ func (app *App) formatMemstats(memstats []string) xtui.TableRows {
 		rows[RowsPerMemory*i+5] = []string{xtui.EmptyCell, memstats[rowsPerEntry*i+6]}
 		rows[RowsPerMemory*i+6] = []string{xtui.EmptyCell, xtui.EmptyCell}
 	}
+
 	return rows
 }
 
 // formatThreads formats memory stats to xtui.TableRows
-func (app *App) formatThreads(threads []vpe.ThreadData) xtui.TableRows {
+func (app *App) formatThreads(threads []stats.ThreadData) xtui.TableRows {
 	rows := make(xtui.TableRows, len(threads))
+
 	for i, thread := range threads {
 		rows[i] = strings.Split(fmt.Sprintf("%d %s %s %d %d %d %d", thread.ID, thread.Name, thread.Type, thread.PID, thread.CPUID, thread.Core, thread.CPUSocket), " ")
 	}
+
 	return rows
 }

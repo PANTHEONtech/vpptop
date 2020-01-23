@@ -14,7 +14,7 @@ Below is short demo preview of **vpptop** in action.
 
 |Branch|Info|
 |---|---|
-|[![master](https://img.shields.io/badge/branch-master-blue.svg?logo=git&logoColor=white)](https://github.com/PantheonTechnologies/vpptop/tree/master)| support for [vpp 19.08](https://packagecloud.io/fdio/1908) work in progress |
+|[![master](https://img.shields.io/badge/branch-master-blue.svg?logo=git&logoColor=white)](https://github.com/PantheonTechnologies/vpptop/tree/master)| support for the latest vpp releases [vpp 19.08](https://packagecloud.io/fdio/1908), [vpp 19.04](https://packagecloud.io/fdio/1904), work in progress [vpp 2001](https://packagecloud.io/fdio/master) |
 |[![vpp1904](https://img.shields.io/badge/branch-vpp1904-orange.svg?logo=git&logoColor=white)](https://github.com/PantheonTechnologies/vpptop/tree/vpp1904)|support for [vpp 19.04](https://packagecloud.io/fdio/1904)|
 
 ## Features
@@ -30,15 +30,19 @@ Following VPP metrics are currently supported:
 ## Requirements
 
 In order to install and run vpptop you need to install following requirements:
- - [Go](https://golang.org/dl/) **1.11**
- - [VPP](https://wiki.fd.io/view/VPP) (**master (19.08-rc0~581-g3eea9de89)** recommended, more info below)
+ - [Go](https://golang.org/dl/) **1.11** (or later versions)
+ - [VPP](https://wiki.fd.io/view/VPP) with one of the following versions:
+    - **19.04.2**
+    - **19.08.1**
+    - **20.01** (work in progress)
 
 ### Install VPP
 
-To install VPP from packagecloud on Ubuntu 18.04, run following commands:
+To install VPP from packagecloud on Ubuntu 18.04, run following commands 
+where you replace `<VERSION>` with either `1904`, `1908`, or `master` for the latest version:
 
 ```sh
-curl -s https://packagecloud.io/install/repositories/fdio/1908/script.deb.sh | sudo bash
+curl -s https://packagecloud.io/install/repositories/fdio/<VERSION>/script.deb.sh | sudo bash
 sudo apt-get install -y vpp vpp-dev vpp-plugin-core
 ```
 
@@ -88,27 +92,6 @@ you can set the `VPPTOP_THEME_LIGHT` environment variable.
 5. ``PgDn PgUp`` to skip pages in active table.
 6. ``Ctrl-C`` to clear counters for the active table.
 7. ``q`` to quit from the application
-
-## Developing vpptop
-
-This section is **not required** for running vpptop and provides info about vpptop development.
-
-### VPP binary API
-
-The vpptop uses GoVPP's binapi-generator to generate Go bindings for VPP binary API from JSON format. This should not normally be needed unless you want to use vpptop with different VPP version that has changed it's API.
-
-For installation instructions for GoVPP's binapi-generator, see: <https://github.com/FDio/govpp/blob/master/README.md>
-
-The vpptop uses [go generate](https://blog.golang.org/generate) tool to actually run the binapi-generator. To run the generator simply go to the vpptop directory and run: `go generate`.
-
-```go
-//go:generate binapi-generator --input-dir=/usr/share/vpp/api/core/ --output-dir=bin_api
-```
-
-By default it will use the JSON files stored in `/usr/share/vpp/api/core/` that are installed together with VPP and outputs the generated files to `bin_api` directory.
-
-In case you need to use different JSON files you can change the arguments in the `gen.go` file, where you can specify the input directory of the JSON files and where the bindings should be generated.
-
 
 [wiki-tui]: https://en.wikipedia.org/wiki/Text-based_user_interface
 [stats-version-commit]: https://github.com/FDio/vpp/commit/1cb333cdf5ce26557233c5bdb5a18738cb6e1e2c

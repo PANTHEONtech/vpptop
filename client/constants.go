@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package main
+package client
 
 // NoColumn indicates no column should be used.
 const NoColumn = -1
@@ -68,4 +68,18 @@ const (
 	ErrorStatErrorCounter = iota
 	ErrorStatErrorNodeName
 	ErrorStatErrorReason
+)
+
+const (
+	MemoryStatName = iota
+	MemoryStatID
+	MemoryStatSize
+	MemoryStatObjects
+	MemoryStatUsed
+	MemoryStatTotal
+	MemoryStatFree
+	MemoryStatReclaimed
+	MemoryStatOverhead
+	MemoryStatPages
+	MemoryStatPageSize
 )

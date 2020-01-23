@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package main
+package client
 
 import (
 	"sort"
@@ -32,17 +32,17 @@ func (app *App) sortNodeStats(nodeStats []stats.Node, field int, ascending bool)
 	case NodeStatNodeName:
 		sortFunc = func(i, j int) bool {
 			if ascending {
-				return nodeStats[i].NodeName < nodeStats[j].NodeName
+				return nodeStats[i].Name < nodeStats[j].Name
 			}
-			return nodeStats[i].NodeName > nodeStats[j].NodeName
+			return nodeStats[i].Name > nodeStats[j].Name
 
 		}
 	case NodeStatNodeIndex:
 		sortFunc = func(i, j int) bool {
 			if ascending {
-				return nodeStats[i].NodeIndex < nodeStats[j].NodeIndex
+				return nodeStats[i].Index < nodeStats[j].Index
 			}
-			return nodeStats[i].NodeIndex > nodeStats[j].NodeIndex
+			return nodeStats[i].Index > nodeStats[j].Index
 		}
 	case NodeStatNodeClocks:
 		sortFunc = func(i, j int) bool {
@@ -75,9 +75,9 @@ func (app *App) sortNodeStats(nodeStats []stats.Node, field int, ascending bool)
 	case NodeStatNodeVC:
 		sortFunc = func(i, j int) bool {
 			if ascending {
-				return nodeStats[i].VC < nodeStats[j].VC
+				return nodeStats[i].VectorsPerCall < nodeStats[j].VectorsPerCall
 			}
-			return nodeStats[i].VC > nodeStats[j].VC
+			return nodeStats[i].VectorsPerCall > nodeStats[j].VectorsPerCall
 		}
 	}
 	sort.Slice(nodeStats, sortFunc)
@@ -114,44 +114,44 @@ func (app *App) sortInterfaceStats(interfaceStats []stats.Interface, field int, 
 	case IfaceStatIfaceMTUL3:
 		sortFunc = func(i, j int) bool {
 			if ascending {
-				return interfaceStats[i].Mtu[0] < interfaceStats[j].Mtu[0]
+				return interfaceStats[i].MTU[0] < interfaceStats[j].MTU[0]
 			}
-			return interfaceStats[i].Mtu[0] > interfaceStats[j].Mtu[0]
+			return interfaceStats[i].MTU[0] > interfaceStats[j].MTU[0]
 		}
 	case IfaceStatIfaceMTUIP4:
 		sortFunc = func(i, j int) bool {
 			if ascending {
-				return interfaceStats[i].Mtu[1] < interfaceStats[j].Mtu[1]
+				return interfaceStats[i].MTU[1] < interfaceStats[j].MTU[1]
 			}
-			return interfaceStats[i].Mtu[1] > interfaceStats[j].Mtu[1]
+			return interfaceStats[i].MTU[1] > interfaceStats[j].MTU[1]
 		}
 	case IfaceStatIfaceMTUIP6:
 		sortFunc = func(i, j int) bool {
 			if ascending {
-				return interfaceStats[i].Mtu[2] < interfaceStats[j].Mtu[2]
+				return interfaceStats[i].MTU[2] < interfaceStats[j].MTU[2]
 			}
-			return interfaceStats[i].Mtu[2] > interfaceStats[j].Mtu[2]
+			return interfaceStats[i].MTU[2] > interfaceStats[j].MTU[2]
 		}
 	case IfaceStatIfaceMTUMPLS:
 		sortFunc = func(i, j int) bool {
 			if ascending {
-				return interfaceStats[i].Mtu[3] < interfaceStats[j].Mtu[3]
+				return interfaceStats[i].MTU[3] < interfaceStats[j].MTU[3]
 			}
-			return interfaceStats[i].Mtu[3] > interfaceStats[j].Mtu[3]
+			return interfaceStats[i].MTU[3] > interfaceStats[j].MTU[3]
 		}
 	case IfaceStatIfaceRxPackets:
 		sortFunc = func(i, j int) bool {
 			if ascending {
-				return interfaceStats[i].RxPackets < interfaceStats[j].RxPackets
+				return interfaceStats[i].Rx.Packets < interfaceStats[j].Rx.Packets
 			}
-			return interfaceStats[i].RxPackets > interfaceStats[j].RxPackets
+			return interfaceStats[i].Rx.Packets > interfaceStats[j].Rx.Packets
 		}
 	case IfaceStatIfaceRxBytes:
 		sortFunc = func(i, j int) bool {
 			if ascending {
-				return interfaceStats[i].RxBytes < interfaceStats[j].RxBytes
+				return interfaceStats[i].Rx.Bytes < interfaceStats[j].Rx.Bytes
 			}
-			return interfaceStats[i].RxBytes > interfaceStats[j].RxBytes
+			return interfaceStats[i].Rx.Bytes > interfaceStats[j].Rx.Bytes
 		}
 	case IfaceStatIfaceRxErrors:
 		sortFunc = func(i, j int) bool {
@@ -163,58 +163,58 @@ func (app *App) sortInterfaceStats(interfaceStats []stats.Interface, field int, 
 	case IfaceStatIfaceRxUnicastPackets:
 		sortFunc = func(i, j int) bool {
 			if ascending {
-				return interfaceStats[i].RxUnicast[0] < interfaceStats[j].RxUnicast[0]
+				return interfaceStats[i].RxUnicast.Packets < interfaceStats[j].RxUnicast.Packets
 			}
-			return interfaceStats[i].RxUnicast[0] > interfaceStats[j].RxUnicast[0]
+			return interfaceStats[i].RxUnicast.Packets > interfaceStats[j].RxUnicast.Packets
 		}
 	case IfaceStatIfaceRxUnicastBytes:
 		sortFunc = func(i, j int) bool {
 			if ascending {
-				return interfaceStats[i].RxUnicast[1] < interfaceStats[j].RxUnicast[1]
+				return interfaceStats[i].RxUnicast.Bytes < interfaceStats[j].RxUnicast.Bytes
 			}
-			return interfaceStats[i].RxUnicast[1] > interfaceStats[j].RxUnicast[1]
+			return interfaceStats[i].RxUnicast.Bytes > interfaceStats[j].RxUnicast.Bytes
 		}
 	case IfaceStatIfaceRxMulticastPackets:
 		sortFunc = func(i, j int) bool {
 			if ascending {
-				return interfaceStats[i].RxMulticast[0] < interfaceStats[j].RxMulticast[0]
+				return interfaceStats[i].RxMulticast.Packets < interfaceStats[j].RxMulticast.Packets
 			}
-			return interfaceStats[i].RxMulticast[0] > interfaceStats[j].RxMulticast[0]
+			return interfaceStats[i].RxMulticast.Packets > interfaceStats[j].RxMulticast.Packets
 		}
 	case IfaceStatIfaceRxMulticastBytes:
 		sortFunc = func(i, j int) bool {
 			if ascending {
-				return interfaceStats[i].RxMulticast[1] < interfaceStats[j].RxMulticast[1]
+				return interfaceStats[i].RxMulticast.Bytes < interfaceStats[j].RxMulticast.Bytes
 			}
-			return interfaceStats[i].RxMulticast[1] > interfaceStats[j].RxMulticast[1]
+			return interfaceStats[i].RxMulticast.Bytes > interfaceStats[j].RxMulticast.Bytes
 		}
 	case IfaceStatIfaceRxBroadcastPackets:
 		sortFunc = func(i, j int) bool {
 			if ascending {
-				return interfaceStats[i].RxBroadcast[0] < interfaceStats[j].RxBroadcast[0]
+				return interfaceStats[i].RxBroadcast.Packets < interfaceStats[j].RxBroadcast.Packets
 			}
-			return interfaceStats[i].RxBroadcast[0] > interfaceStats[j].RxBroadcast[0]
+			return interfaceStats[i].RxBroadcast.Packets > interfaceStats[j].RxBroadcast.Packets
 		}
 	case IfaceStatIfaceRxBroadcastBytes:
 		sortFunc = func(i, j int) bool {
 			if ascending {
-				return interfaceStats[i].RxBroadcast[1] < interfaceStats[j].RxBroadcast[1]
+				return interfaceStats[i].RxBroadcast.Bytes < interfaceStats[j].RxBroadcast.Bytes
 			}
-			return interfaceStats[i].RxBroadcast[1] > interfaceStats[j].RxBroadcast[1]
+			return interfaceStats[i].RxBroadcast.Bytes > interfaceStats[j].RxBroadcast.Bytes
 		}
 	case IfaceStatIfaceTxPackets:
 		sortFunc = func(i, j int) bool {
 			if ascending {
-				return interfaceStats[i].TxPackets < interfaceStats[j].TxPackets
+				return interfaceStats[i].Tx.Packets < interfaceStats[j].Tx.Packets
 			}
-			return interfaceStats[i].TxPackets > interfaceStats[j].TxPackets
+			return interfaceStats[i].Tx.Packets > interfaceStats[j].Tx.Packets
 		}
 	case IfaceStatIfaceTxBytes:
 		sortFunc = func(i, j int) bool {
 			if ascending {
-				return interfaceStats[i].TxBytes < interfaceStats[j].TxBytes
+				return interfaceStats[i].Tx.Bytes < interfaceStats[j].Tx.Bytes
 			}
-			return interfaceStats[i].TxBytes > interfaceStats[j].TxBytes
+			return interfaceStats[i].Tx.Bytes > interfaceStats[j].Tx.Bytes
 		}
 	case IfaceStatIfaceTxErrors:
 		sortFunc = func(i, j int) bool {
@@ -226,44 +226,44 @@ func (app *App) sortInterfaceStats(interfaceStats []stats.Interface, field int, 
 	case IfaceStatIfaceTxUnicastMissPackets:
 		sortFunc = func(i, j int) bool {
 			if ascending {
-				return interfaceStats[i].TxUnicastMiss[0] < interfaceStats[j].TxUnicastMiss[0]
+				return interfaceStats[i].TxUnicast.Packets < interfaceStats[j].TxUnicast.Packets
 			}
-			return interfaceStats[i].TxUnicastMiss[0] > interfaceStats[j].TxUnicastMiss[0]
+			return interfaceStats[i].TxUnicast.Packets > interfaceStats[j].TxUnicast.Packets
 		}
 	case IfaceStatIfaceTxUnicastMissBytes:
 		sortFunc = func(i, j int) bool {
 			if ascending {
-				return interfaceStats[i].TxUnicastMiss[1] < interfaceStats[j].TxUnicastMiss[1]
+				return interfaceStats[i].TxUnicast.Bytes < interfaceStats[j].TxUnicast.Bytes
 			}
-			return interfaceStats[i].TxUnicastMiss[1] > interfaceStats[j].TxUnicastMiss[1]
+			return interfaceStats[i].TxUnicast.Bytes > interfaceStats[j].TxUnicast.Packets
 		}
 	case IfaceStatIfaceTxMulticastPackets:
 		sortFunc = func(i, j int) bool {
 			if ascending {
-				return interfaceStats[i].TxMulticast[0] < interfaceStats[j].TxMulticast[0]
+				return interfaceStats[i].TxMulticast.Packets < interfaceStats[j].TxMulticast.Packets
 			}
-			return interfaceStats[i].TxMulticast[0] > interfaceStats[j].TxMulticast[0]
+			return interfaceStats[i].TxMulticast.Packets > interfaceStats[j].TxMulticast.Packets
 		}
 	case IfaceStatIfaceTxMulticastBytes:
 		sortFunc = func(i, j int) bool {
 			if ascending {
-				return interfaceStats[i].TxMulticast[1] < interfaceStats[j].TxMulticast[1]
+				return interfaceStats[i].TxMulticast.Bytes < interfaceStats[j].TxMulticast.Bytes
 			}
-			return interfaceStats[i].TxMulticast[1] > interfaceStats[j].TxMulticast[1]
+			return interfaceStats[i].TxMulticast.Bytes > interfaceStats[j].TxMulticast.Bytes
 		}
 	case IfaceStatIfaceTxBroadcastPackets:
 		sortFunc = func(i, j int) bool {
 			if ascending {
-				return interfaceStats[i].TxBroadcast[0] < interfaceStats[j].TxBroadcast[0]
+				return interfaceStats[i].TxBroadcast.Packets < interfaceStats[j].TxBroadcast.Packets
 			}
-			return interfaceStats[i].TxBroadcast[0] > interfaceStats[j].TxBroadcast[0]
+			return interfaceStats[i].TxBroadcast.Packets > interfaceStats[j].TxBroadcast.Packets
 		}
 	case IfaceStatIfaceTxBroadcastBytes:
 		sortFunc = func(i, j int) bool {
 			if ascending {
-				return interfaceStats[i].TxBroadcast[1] < interfaceStats[j].TxBroadcast[1]
+				return interfaceStats[i].TxBroadcast.Bytes < interfaceStats[j].TxBroadcast.Bytes
 			}
-			return interfaceStats[i].TxBroadcast[1] > interfaceStats[j].TxBroadcast[1]
+			return interfaceStats[i].TxBroadcast.Bytes > interfaceStats[j].TxBroadcast.Bytes
 		}
 	case IfaceStatIfaceDrops:
 		sortFunc = func(i, j int) bool {
@@ -314,16 +314,16 @@ func (app *App) sortErrorStats(errorStats []stats.Error, field int, ascending bo
 	case ErrorStatErrorNodeName:
 		sortFunc = func(i, j int) bool {
 			if ascending {
-				return errorStats[i].NodeName < errorStats[j].NodeName
+				return errorStats[i].Node < errorStats[j].Node
 			}
-			return errorStats[i].NodeName > errorStats[j].NodeName
+			return errorStats[i].Node > errorStats[j].Node
 		}
 	case ErrorStatErrorReason:
 		sortFunc = func(i, j int) bool {
 			if ascending {
-				return errorStats[i].Reason < errorStats[j].Reason
+				return errorStats[i].Name < errorStats[j].Name
 			}
-			return errorStats[i].Reason > errorStats[j].Reason
+			return errorStats[i].Name > errorStats[j].Name
 		}
 	}
 	sort.Slice(errorStats, sortFunc)
