@@ -3,10 +3,13 @@ module github.com/PantheonTechnologies/vpptop
 go 1.13
 
 require (
-	git.fd.io/govpp.git v0.2.1-0.20191115113328-e45d8802fd8d
+	git.fd.io/govpp.git v0.3.5
 	github.com/gizak/termui/v3 v3.1.0
 	github.com/imdario/mergo v0.3.8 // indirect
 	github.com/ligato/cn-infra v2.2.1-0.20191030081411-42c7431fdca1+incompatible
+	github.com/lunixbochs/struc v0.0.0-20190916212049-a5c72983bc42
+	github.com/pkg/errors v0.8.1
+	github.com/prometheus/common v0.4.0
 	github.com/satori/go.uuid v1.2.1-0.20181028125025-b2ce2384e17b // indirect
 	github.com/spf13/cobra v0.0.5
 	go.ligato.io/vpp-agent/v2 v2.5.0-alpha.0.20200108085843-0e2148d3dd11
