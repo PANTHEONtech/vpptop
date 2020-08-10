@@ -232,7 +232,7 @@ func (s *VPP) ConnectRemote(raddr string) error {
 	if useLocal {
 		s.handler = NewCompatibleLocalHandler(s.vppclient)
 	} else {
-		s.handler = NewCompatibleAgentHandler(s.vppclient)
+		s.handler = NewCompatibleVPPHandler(s.vppclient)
 	}
 
 	ctx := context.Background()
@@ -300,7 +300,7 @@ func (s *VPP) Connect(soc string) error {
 	if useLocal {
 		s.handler = NewCompatibleLocalHandler(s.vppclient)
 	} else {
-		s.handler = NewCompatibleAgentHandler(s.vppclient)
+		s.handler = NewCompatibleVPPHandler(s.vppclient)
 	}
 
 	ctx := context.Background()

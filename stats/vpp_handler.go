@@ -9,51 +9,51 @@ import (
 	ifplugincalls "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
 )
 
-// AgentHandler uses Ligato VPP-Agent interface and telemetry handlers
+// VPPHandler uses Ligato VPP-Agent interface and telemetry handlers
 // to obtain data from VPP
-type AgentHandler struct {
+type VPPHandler struct {
 	vppCoreCalls      govppcalls.VppCoreAPI
 	interfaceVppCalls ifplugincalls.InterfaceVppAPI
 	telemetryVppCalls telemetrycalls.TelemetryVppAPI
 }
 
-// NewCompatibleAgentHandler creates a new instance of the agent handler
-func NewCompatibleAgentHandler(c *vppClient) *AgentHandler {
-	return &AgentHandler{
+// NewCompatibleVPPHandler creates a new instance of the VPP handler
+func NewCompatibleVPPHandler(c *vppClient) *VPPHandler {
+	return &VPPHandler{
 		vppCoreCalls:      govppcalls.CompatibleHandler(c),
 		interfaceVppCalls: ifplugincalls.CompatibleInterfaceVppHandler(c, logrus.NewLogger("")),
 		telemetryVppCalls: telemetrycalls.CompatibleTelemetryHandler(c),
 	}
 }
 
-func (h *AgentHandler) DumpInterfaces(ctx context.Context) (map[uint32]*ifplugincalls.InterfaceDetails, error) {
+func (h *VPPHandler) DumpInterfaces(ctx context.Context) (map[uint32]*ifplugincalls.InterfaceDetails, error) {
 	return h.interfaceVppCalls.DumpInterfaces(ctx)
 }
 
-func (h *AgentHandler) GetInterfaceStats(ctx context.Context) (*api.InterfaceStats, error) {
+func (h *VPPHandler) GetInterfaceStats(ctx context.Context) (*api.InterfaceStats, error) {
 	return h.telemetryVppCalls.GetInterfaceStats(ctx)
 }
 
-func (h *AgentHandler) GetNodeCounters(ctx context.Context) (*telemetrycalls.NodeCounterInfo, error) {
+func (h *VPPHandler) GetNodeCounters(ctx context.Context) (*telemetrycalls.NodeCounterInfo, error) {
 	return h.telemetryVppCalls.GetNodeCounters(ctx)
 }
 
-func (h *AgentHandler) GetRuntimeInfo(ctx context.Context) (*telemetrycalls.RuntimeInfo, error) {
+func (h *VPPHandler) GetRuntimeInfo(ctx context.Context) (*telemetrycalls.RuntimeInfo, error) {
 	return h.telemetryVppCalls.GetRuntimeInfo(ctx)
 }
 
-func (h *AgentHandler) RunCli(ctx context.Context, cmd string) (string, error) {
+func (h *VPPHandler) RunCli(ctx context.Context, cmd string) (string, error) {
 	return h.vppCoreCalls.RunCli(ctx, cmd)
 }
 
-func (h *AgentHandler) GetPlugins(ctx context.Context) ([]govppcalls.PluginInfo, error) {
+func (h *VPPHandler) GetPlugins(ctx context.Context) ([]govppcalls.PluginInfo, error) {
 	return h.vppCoreCalls.GetPlugins(ctx)
 }
 
-func (h *AgentHandler) GetVersion(ctx context.Context) (*govppcalls.VersionInfo, error) {
+func (h *VPPHandler) GetVersion(ctx context.Context) (*govppcalls.VersionInfo, error) {
 	return h.vppCoreCalls.GetVersion(ctx)
 }
 
-func (h *AgentHandler) GetSession(ctx context.Context) (*govppcalls.SessionInfo, error) {
+func (h *VPPHandler) GetSession(ctx context.Context) (*govppcalls.SessionInfo, error) {
 	return h.vppCoreCalls.GetSession(ctx)
 }
