@@ -21,7 +21,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/PantheonTechnologies/vpptop/stats"
+	"git.fd.io/govpp.git/adapter"
 	"github.com/spf13/cobra"
 )
 
@@ -60,7 +60,7 @@ Thread info:    name, type, PID...`,
 }
 
 func init() {
-	rootCmd.Flags().StringP("socket", "s", stats.DefaultSocket, "vpp stats segment socket")
+	rootCmd.Flags().StringP("socket", "s", adapter.DefaultStatsSocket, "vpp stats segment socket")
 	rootCmd.Flags().StringP("log", "l", "vpptop.log", "Log file")
 }
 

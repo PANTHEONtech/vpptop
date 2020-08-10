@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"git.fd.io/govpp.git"
 	"git.fd.io/govpp.git/adapter/statsclient"
+	"github.com/PantheonTechnologies/vpptop/local"
 	"strings"
 	"sync"
 	"time"
@@ -32,9 +33,7 @@ import (
 	"git.fd.io/govpp.git/core"
 	"git.fd.io/govpp.git/proxy"
 
-	"github.com/ligato/cn-infra/logging/logrus"
-
-	govppmux "go.ligato.io/vpp-agent/v2/plugins/govppmux"
+	"go.ligato.io/vpp-agent/v2/plugins/govppmux"
 	govppcalls "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls"
 	telemetrycalls "go.ligato.io/vpp-agent/v2/plugins/telemetry/vppcalls"
 	ifplugincalls "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
@@ -46,6 +45,7 @@ import (
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001"
 	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324"
 
+	vpe_local "github.com/PantheonTechnologies/vpptop/local/binapi/vpe"
 	vpe1904 "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/vpe"
 	vpe1908 "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/vpe"
 	vpe2001 "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/vpe"
@@ -69,9 +69,34 @@ const (
 	stateDown = "down"
 )
 
-var (
-	DefaultSocket = adapter.DefaultStatsSocket
-)
+// VPPTopStatsHandler defines methods required to obtain all stats displayed by the VPPTop.
+// It effectively replaces specific plugin-based handlers (interface, telemetry... )
+type VPPTopStatsHandler interface {
+	// GetPlugins retrieves info about loaded VPP plugins.
+	GetPlugins(context.Context) ([]govppcalls.PluginInfo, error)
+
+	// RunCli sends CLI command to VPP
+	RunCli(ctx context.Context, cmd string) (string, error)
+
+	// GetVersion retrieves info about VPP version.
+	GetVersion(context.Context) (*govppcalls.VersionInfo, error)
+
+	// GetSession retrieves info about active session
+	GetSession(context.Context) (*govppcalls.SessionInfo, error)
+
+	// DumpInterfaces retrieves VPP interface data and returns them as VPP-Agent northbound
+	// interface data
+	DumpInterfaces(ctx context.Context) (map[uint32]*ifplugincalls.InterfaceDetails, error)
+
+	// GetInterfaceStats retrieves interface stats
+	GetInterfaceStats(context.Context) (*api.InterfaceStats, error)
+
+	// GetNodeCounters retrieves node counters info
+	GetNodeCounters(context.Context) (*telemetrycalls.NodeCounterInfo, error)
+
+	// GetRuntimeInfo retrieves node's runtime info
+	GetRuntimeInfo(context.Context) (*telemetrycalls.RuntimeInfo, error)
+}
 
 type (
 	vppClient struct {
@@ -88,11 +113,8 @@ type (
 	VPP struct {
 		vppclient   *vppClient
 		statsClient adapter.StatsAPI
-		apiChan     api.Channel
 
-		interfaceHandler ifplugincalls.InterfaceVppAPI
-		telemetryHandler telemetrycalls.TelemetryVppAPI
-		govppHandler     govppcalls.VppCoreAPI
+		handler VPPTopStatsHandler
 
 		binapiVersion     binapi.Version
 		vppVersion        *govppcalls.VersionInfo
@@ -110,8 +132,8 @@ type (
 	// ThreadData wraps all thread data counters.
 	ThreadData struct {
 		ID        uint32
-		Name      []byte
-		Type      []byte
+		Name      string
+		Type      string
 		PID       uint32
 		CPUID     uint32
 		Core      uint32
@@ -183,12 +205,7 @@ func (s *VPP) ConnectRemote(raddr string) error {
 		return err
 	}
 
-	s.apiChan, err = client.NewBinapiClient()
-	if err != nil {
-		return err
-	}
-
-	s.binapiVersion, err = vpp.FindCompatibleBinapi(s.apiChan)
+	apiChan, err := client.NewBinapiClient()
 	if err != nil {
 		return err
 	}
@@ -196,6 +213,15 @@ func (s *VPP) ConnectRemote(raddr string) error {
 	s.vppclient = &vppClient{
 		client:    client,
 		statsConn: statsConn,
+		apiChan:   apiChan,
+	}
+
+	var useLocal bool
+	if s.binapiVersion, useLocal = CheckLocalHandlerCompatible(s.vppclient.apiChan); !useLocal {
+		s.binapiVersion, err = vpp.FindCompatibleBinapi(s.vppclient.apiChan)
+		if err != nil {
+			return err
+		}
 	}
 
 	msgList := binapi.Versions[s.binapiVersion]
@@ -203,24 +229,25 @@ func (s *VPP) ConnectRemote(raddr string) error {
 		gob.Register(msg)
 	}
 
-	s.govppHandler, err = govppcalls.NewHandler(s.vppclient)
-	if err != nil {
-		return err
+	if useLocal {
+		s.handler = NewCompatibleLocalHandler(s.vppclient)
+	} else {
+		s.handler = NewCompatibleVPPHandler(s.vppclient)
 	}
 
 	ctx := context.Background()
 
-	plugins, err := s.govppHandler.GetPlugins(ctx)
+	plugins, err := s.handler.GetPlugins(ctx)
 	if err != nil {
 		return err
 	}
 
-	session, err := s.govppHandler.GetSession(ctx)
+	session, err := s.handler.GetSession(ctx)
 	if err != nil {
 		return err
 	}
 
-	s.vppVersion, err = s.govppHandler.GetVersion(ctx)
+	s.vppVersion, err = s.handler.GetVersion(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get vpp version: %v", err)
 	}
@@ -231,9 +258,6 @@ func (s *VPP) ConnectRemote(raddr string) error {
 		SessionInfo: *session,
 		Plugins:     plugins,
 	}
-
-	s.interfaceHandler = ifplugincalls.CompatibleInterfaceVppHandler(s.vppclient, logrus.NewLogger(""))
-	s.telemetryHandler = telemetrycalls.CompatibleTelemetryHandler(s.vppclient)
 
 	return nil
 }
@@ -254,12 +278,7 @@ func (s *VPP) Connect(soc string) error {
 		return fmt.Errorf("connection to govpp failed: %v", err)
 	}
 
-	s.apiChan, err = vppConn.NewAPIChannel()
-	if err != nil {
-		return err
-	}
-
-	s.binapiVersion, err = vpp.FindCompatibleBinapi(s.apiChan)
+	apiChan, err := vppConn.NewAPIChannel()
 	if err != nil {
 		return err
 	}
@@ -267,26 +286,35 @@ func (s *VPP) Connect(soc string) error {
 	s.vppclient = &vppClient{
 		vppConn:   vppConn,
 		statsConn: statsConn,
+		apiChan:   apiChan,
 	}
 
-	s.govppHandler, err = govppcalls.NewHandler(s.vppclient)
-	if err != nil {
-		return err
+	var useLocal bool
+	if s.binapiVersion, useLocal = CheckLocalHandlerCompatible(s.vppclient.apiChan); !useLocal {
+		s.binapiVersion, err = vpp.FindCompatibleBinapi(s.vppclient.apiChan)
+		if err != nil {
+			return err
+		}
+	}
+
+	if useLocal {
+		s.handler = NewCompatibleLocalHandler(s.vppclient)
+	} else {
+		s.handler = NewCompatibleVPPHandler(s.vppclient)
 	}
 
 	ctx := context.Background()
-
-	plugins, err := s.govppHandler.GetPlugins(ctx)
+	plugins, err := s.handler.GetPlugins(ctx)
 	if err != nil {
 		return err
 	}
 
-	session, err := s.govppHandler.GetSession(ctx)
+	session, err := s.handler.GetSession(ctx)
 	if err != nil {
 		return err
 	}
 
-	s.vppVersion, err = s.govppHandler.GetVersion(ctx)
+	s.vppVersion, err = s.handler.GetVersion(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get vpp version: %v", err)
 	}
@@ -298,9 +326,6 @@ func (s *VPP) Connect(soc string) error {
 		Plugins:     plugins,
 	}
 
-	s.interfaceHandler = ifplugincalls.CompatibleInterfaceVppHandler(s.vppclient, logrus.NewLogger(""))
-	s.telemetryHandler = telemetrycalls.CompatibleTelemetryHandler(s.vppclient)
-
 	return nil
 }
 
@@ -311,13 +336,10 @@ func (s *VPP) Version() (string, error) {
 
 // Disconnect should be called after Connect, if the connection is no longer needed.
 func (s *VPP) Disconnect() {
-	s.apiChan.Close()
-
 	if s.vppclient != nil {
 		if s.vppclient.vppConn != nil {
 			s.vppclient.vppConn.Disconnect()
 		}
-
 		if s.vppclient.apiChan != nil {
 			s.vppclient.apiChan.Close()
 		}
@@ -330,14 +352,14 @@ func (s *VPP) Disconnect() {
 
 // GetNodes returns per node statistics.
 func (s *VPP) GetNodes(ctx context.Context) ([]Node, error) {
-	runtimeCounters, err := s.telemetryHandler.GetRuntimeInfo(ctx)
+	runtimeCounters, err := s.handler.GetRuntimeInfo(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	threads := runtimeCounters.GetThreads()
 	if len(threads) == 0 {
-		return nil, errors.New("No runtime counters")
+		return nil, errors.New("no runtime counters")
 	}
 
 	result := make([]Node, 0, len(threads[0].Items))
@@ -368,14 +390,14 @@ func (s *VPP) GetInterfaces(ctx context.Context) ([]Interface, error) {
 	go func() {
 		defer wg.Done()
 		var err error
-		ifaceDetails, err = s.interfaceHandler.DumpInterfaces(ctx)
+		ifaceDetails, err = s.handler.DumpInterfaces(ctx)
 		errChan <- err
 	}()
 
 	go func() {
 		defer wg.Done()
 		var err error
-		ifaceStats, err = s.telemetryHandler.GetInterfaceStats(ctx)
+		ifaceStats, err = s.handler.GetInterfaceStats(ctx)
 		errChan <- err
 	}()
 
@@ -407,7 +429,7 @@ func (s *VPP) GetInterfaces(ctx context.Context) ([]Interface, error) {
 
 // GetErrors returns per error statistics.
 func (s *VPP) GetErrors(ctx context.Context) ([]Error, error) {
-	counters, err := s.telemetryHandler.GetNodeCounters(ctx)
+	counters, err := s.handler.GetNodeCounters(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -425,7 +447,7 @@ func (s *VPP) GetErrors(ctx context.Context) ([]Error, error) {
 
 // ClearIfaceCounters resets the counters for the interface.
 func (s *VPP) ClearIfaceCounters(ctx context.Context) error {
-	if _, err := s.govppHandler.RunCli(ctx, "clear interfaces"); err != nil {
+	if _, err := s.handler.RunCli(ctx, "clear interfaces"); err != nil {
 		return fmt.Errorf("request failed: %v", err)
 	}
 
@@ -434,7 +456,7 @@ func (s *VPP) ClearIfaceCounters(ctx context.Context) error {
 
 // ClearRuntimeCounters clears the runtime counters for nodes.
 func (s *VPP) ClearRuntimeCounters(ctx context.Context) error {
-	if _, err := s.govppHandler.RunCli(ctx, "clear runtime"); err != nil {
+	if _, err := s.handler.RunCli(ctx, "clear runtime"); err != nil {
 		return fmt.Errorf("request failed: %v", err)
 	}
 
@@ -444,7 +466,7 @@ func (s *VPP) ClearRuntimeCounters(ctx context.Context) error {
 // ClearErrorCounters clears the counters for errors.
 func (s *VPP) ClearErrorCounters(ctx context.Context) error {
 	s.updateLastErrors(ctx)
-	if _, err := s.govppHandler.RunCli(ctx, "clear errors"); err != nil {
+	if _, err := s.handler.RunCli(ctx, "clear errors"); err != nil {
 		return fmt.Errorf("request failed: %v", err)
 	}
 
@@ -453,7 +475,7 @@ func (s *VPP) ClearErrorCounters(ctx context.Context) error {
 
 // Memory returns memory usage per thread.
 func (s *VPP) Memory(ctx context.Context) ([]string, error) {
-	mem, err := s.govppHandler.RunCli(ctx, "show memory main-heap verbose")
+	mem, err := s.handler.RunCli(ctx, "show memory main-heap verbose")
 	if err != nil {
 		return nil, err
 	}
@@ -473,6 +495,8 @@ func (s *VPP) Memory(ctx context.Context) ([]string, error) {
 // Threads returns thread data per thread.
 func (s *VPP) Threads(_ context.Context) ([]ThreadData, error) {
 	switch s.binapiVersion {
+	case local.Version:
+		return s.threadsLocal()
 	case vpp1904.Version:
 		return s.threads1904()
 	case vpp1908.Version:
@@ -486,10 +510,10 @@ func (s *VPP) Threads(_ context.Context) ([]ThreadData, error) {
 	}
 }
 
-func (s *VPP) threads1904() ([]ThreadData, error) {
-	req := &vpe1904.ShowThreads{}
-	reply := &vpe1904.ShowThreadsReply{}
-	if err := s.apiChan.SendRequest(req).ReceiveReply(reply); err != nil {
+func (s *VPP) threadsLocal() ([]ThreadData, error) {
+	req := &vpe_local.ShowThreads{}
+	reply := &vpe_local.ShowThreadsReply{}
+	if err := s.vppclient.apiChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return nil, fmt.Errorf("request failed: %v", err)
 	}
 
@@ -498,6 +522,27 @@ func (s *VPP) threads1904() ([]ThreadData, error) {
 		result[i].ID = reply.ThreadData[i].ID
 		result[i].Name = reply.ThreadData[i].Name
 		result[i].Type = reply.ThreadData[i].Type
+		result[i].PID = reply.ThreadData[i].PID
+		result[i].Core = reply.ThreadData[i].Core
+		result[i].CPUID = reply.ThreadData[i].CPUID
+		result[i].CPUSocket = reply.ThreadData[i].CPUSocket
+	}
+
+	return result, nil
+}
+
+func (s *VPP) threads1904() ([]ThreadData, error) {
+	req := &vpe1904.ShowThreads{}
+	reply := &vpe1904.ShowThreadsReply{}
+	if err := s.vppclient.apiChan.SendRequest(req).ReceiveReply(reply); err != nil {
+		return nil, fmt.Errorf("request failed: %v", err)
+	}
+
+	result := make([]ThreadData, len(reply.ThreadData))
+	for i := range reply.ThreadData {
+		result[i].ID = reply.ThreadData[i].ID
+		result[i].Name = string(reply.ThreadData[i].Name)
+		result[i].Type = string(reply.ThreadData[i].Type)
 		result[i].PID = reply.ThreadData[i].PID
 		result[i].Core = reply.ThreadData[i].Core
 		result[i].CPUID = reply.ThreadData[i].CPUID
@@ -510,15 +555,15 @@ func (s *VPP) threads1904() ([]ThreadData, error) {
 func (s *VPP) threads1908() ([]ThreadData, error) {
 	req := &vpe1908.ShowThreads{}
 	reply := &vpe1908.ShowThreadsReply{}
-	if err := s.apiChan.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := s.vppclient.apiChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return nil, fmt.Errorf("request failed: %v", err)
 	}
 
 	result := make([]ThreadData, len(reply.ThreadData))
 	for i := range reply.ThreadData {
 		result[i].ID = reply.ThreadData[i].ID
-		result[i].Name = reply.ThreadData[i].Name
-		result[i].Type = reply.ThreadData[i].Type
+		result[i].Name = string(reply.ThreadData[i].Name)
+		result[i].Type = string(reply.ThreadData[i].Type)
 		result[i].PID = reply.ThreadData[i].PID
 		result[i].Core = reply.ThreadData[i].Core
 		result[i].CPUID = reply.ThreadData[i].CPUID
@@ -531,15 +576,15 @@ func (s *VPP) threads1908() ([]ThreadData, error) {
 func (s *VPP) threads2001324() ([]ThreadData, error) {
 	req := &vpe2001_324.ShowThreads{}
 	reply := &vpe2001_324.ShowThreadsReply{}
-	if err := s.apiChan.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := s.vppclient.apiChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return nil, fmt.Errorf("request failed: %v", err)
 	}
 
 	result := make([]ThreadData, len(reply.ThreadData))
 	for i := range reply.ThreadData {
 		result[i].ID = reply.ThreadData[i].ID
-		result[i].Name = reply.ThreadData[i].Name
-		result[i].Type = reply.ThreadData[i].Type
+		result[i].Name = string(reply.ThreadData[i].Name)
+		result[i].Type = string(reply.ThreadData[i].Type)
 		result[i].PID = reply.ThreadData[i].PID
 		result[i].Core = reply.ThreadData[i].Core
 		result[i].CPUID = reply.ThreadData[i].CPUID
@@ -552,15 +597,15 @@ func (s *VPP) threads2001324() ([]ThreadData, error) {
 func (s *VPP) threads2001() ([]ThreadData, error) {
 	req := &vpe2001.ShowThreads{}
 	reply := &vpe2001.ShowThreadsReply{}
-	if err := s.apiChan.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := s.vppclient.apiChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return nil, fmt.Errorf("request failed: %v", err)
 	}
 
 	result := make([]ThreadData, len(reply.ThreadData))
 	for i := range reply.ThreadData {
 		result[i].ID = reply.ThreadData[i].ID
-		result[i].Name = reply.ThreadData[i].Name
-		result[i].Type = reply.ThreadData[i].Type
+		result[i].Name = string(reply.ThreadData[i].Name)
+		result[i].Type = string(reply.ThreadData[i].Type)
 		result[i].PID = reply.ThreadData[i].PID
 		result[i].Core = reply.ThreadData[i].Core
 		result[i].CPUID = reply.ThreadData[i].CPUID
@@ -572,7 +617,7 @@ func (s *VPP) threads2001() ([]ThreadData, error) {
 
 // updateLastErrors clears the error counters.
 func (s *VPP) updateLastErrors(ctx context.Context) {
-	counters, err := s.telemetryHandler.GetNodeCounters(ctx)
+	counters, err := s.handler.GetNodeCounters(ctx)
 	if err != nil {
 		return
 	}
