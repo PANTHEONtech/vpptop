@@ -23,9 +23,9 @@ import (
 )
 
 const (
-	// TableColResizedWithWindow represent that the column
+	// Resize represent that the column
 	// of the tableView should be resized with the terminal window.
-	TableColResizedWithWindow = -1
+	Resize = -1
 )
 
 // Table positions to match sort panel
@@ -77,7 +77,7 @@ func NewTableView(itemsList []string, headerRows xtui.TableRows, filterCol, rows
 	v.colWidth = colWidths
 
 	for i, val := range v.colWidth {
-		if val == TableColResizedWithWindow {
+		if val == Resize {
 			v.resized = append(v.resized, i)
 		} else {
 			v.tw += v.colWidth[i]
@@ -143,5 +143,6 @@ func (v *TableView) Update(payload interface{}) {
 
 // Widgets returns all widgets to be drawed by this view.
 func (v *TableView) Widgets() []tui.Drawable { return []tui.Drawable{v.table, v.header} }
+
 // ItemsList returns a list with names based on which the table can be sorted.
-func (v *TableView) ItemsList() []string     { return v.itemsList }
+func (v *TableView) ItemsList() []string { return v.itemsList }

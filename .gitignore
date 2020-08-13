@@ -1,3 +1,11 @@
 /.idea
-vpptop
-vpptop.log
+
+# binaries
+cmd/vpptop/vpptop
+cmd/vpptop_local/vpptop_local
+
+# log files
+cmd/vpptop/vpptop.log
+cmd/vpptop/remote.log
+cmd/vpptop_local/vpptop.log
+cmd/vpptop_local/remote.log

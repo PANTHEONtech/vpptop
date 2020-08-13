@@ -17,13 +17,12 @@
 package client
 
 import (
+	"github.com/PantheonTechnologies/vpptop/stats/api"
 	"sort"
-
-	"github.com/PantheonTechnologies/vpptop/stats"
 )
 
 // sortNodeStats sort the slice based specified field
-func (app *App) sortNodeStats(nodeStats []stats.Node, field int, ascending bool) {
+func (app *App) sortNodeStats(nodeStats []api.Node, field int, ascending bool) {
 	if field == NoColumn {
 		return
 	}
@@ -84,7 +83,7 @@ func (app *App) sortNodeStats(nodeStats []stats.Node, field int, ascending bool)
 }
 
 // sortInterfaceStats sort the slice based on the specified field
-func (app *App) sortInterfaceStats(interfaceStats []stats.Interface, field int, ascending bool) {
+func (app *App) sortInterfaceStats(interfaceStats []api.Interface, field int, ascending bool) {
 	if field == NoColumn {
 		return
 	}
@@ -298,7 +297,7 @@ func (app *App) sortInterfaceStats(interfaceStats []stats.Interface, field int, 
 }
 
 // sortErrorStats sorts the slice based on the specified field
-func (app *App) sortErrorStats(errorStats []stats.Error, field int, ascending bool) {
+func (app *App) sortErrorStats(errorStats []api.Error, field int, ascending bool) {
 	if field == NoColumn {
 		return
 	}

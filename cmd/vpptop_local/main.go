@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 PANTHEON.tech.
+ * Copyright (c) 2020 Cisco and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,13 @@
 
 package main
 
-import "github.com/PantheonTechnologies/vpptop/cmd"
+import (
+	"github.com/PantheonTechnologies/vpptop/client"
+	"github.com/PantheonTechnologies/vpptop/command"
+	"github.com/PantheonTechnologies/vpptop/stats/local"
+)
 
 func main() {
-	cmd.Execute()
+	client.Defs = append(client.Defs, &local.HandlerDef{})
+	command.Execute()
 }
