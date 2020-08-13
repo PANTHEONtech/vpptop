@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"sync"
 	"time"
@@ -195,7 +196,9 @@ func (p *vppProvider) Disconnect() {
 	}
 
 	if p.statsClient != nil {
-		p.statsClient.Disconnect()
+		if err := p.statsClient.Disconnect(); err != nil {
+			log.Printf("error disconnecting VPP provider: %v", err)
+		}
 	}
 }
 
@@ -273,7 +276,7 @@ func (p *vppProvider) GetInterfaces(ctx context.Context) ([]api.Interface, error
 		}
 		result = append(result, api.Interface{
 			InterfaceCounters: iface,
-			IPAddrs:           details.IPAddresses,
+			IPAddresses:       details.IPAddresses,
 			State:             state,
 			MTU:               details.MTU,
 		})

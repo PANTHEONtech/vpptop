@@ -107,9 +107,9 @@ type InterfaceDetails struct {
 // including interface counters
 type Interface struct {
 	govppapi.InterfaceCounters
-	IPAddrs []string
-	State   string
-	MTU     []uint32
+	IPAddresses []string
+	State       string
+	MTU         []uint32
 }
 
 // VPPInfo basic information about the connected VPP

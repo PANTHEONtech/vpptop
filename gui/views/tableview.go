@@ -141,7 +141,7 @@ func (v *TableView) Update(payload interface{}) {
 
 }
 
-// Widgets returns all widgets to be drawed by this view.
+// Widgets returns all widgets to be drawn by this view.
 func (v *TableView) Widgets() []tui.Drawable { return []tui.Drawable{v.table, v.header} }
 
 // ItemsList returns a list with names based on which the table can be sorted.

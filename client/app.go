@@ -58,7 +58,7 @@ type App struct {
 	vppProvider api.VppProviderAPI
 
 	// Cache for interface stats to
-	// be able to calculate bytes/s packates/s.
+	// be able to calculate bytes/s packets/s.
 	IfCache []api.Interface
 
 	// sortBy carries information used at sorting stats
@@ -197,14 +197,14 @@ func NewApp(lightTheme bool) (*App, error) {
 }
 
 // Init initializes app.
-func (app *App) Init(soc, raddr string) error {
-	switch raddr {
+func (app *App) Init(soc, rAddr string) error {
+	switch rAddr {
 	case "":
 		if err := app.vppProvider.Connect(soc); err != nil {
 			return err
 		}
 	default:
-		if err := app.vppProvider.ConnectRemote(raddr); err != nil {
+		if err := app.vppProvider.ConnectRemote(rAddr); err != nil {
 			return err
 		}
 	}
@@ -423,11 +423,11 @@ func (app *App) formatInterfaces(ifaces []api.Interface) xtui.TableRows {
 		// start from the second row, the first is taken up
 		// by the interface name.
 		row := RowsPerIface*i + 1
-		ip := len(iface.IPAddrs)
+		ip := len(iface.IPAddresses)
 		maxRow := RowsPerIface*i + RowsPerIface // last row of each entry.
 
 		for ip > 0 && row < maxRow {
-			rows[row][0] = strings.Split(iface.IPAddrs[ip-1], "/")[0]
+			rows[row][0] = strings.Split(iface.IPAddresses[ip-1], "/")[0]
 			ip--
 			row++
 		}

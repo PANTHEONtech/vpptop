@@ -135,7 +135,7 @@ func (t *Table) ColumnWidths() ([]int, error) {
 		return t.Table.ColumnWidths, nil
 	}
 	if len(t.Rows) == 0 {
-		return nil, errors.New("Table does not contain any rows")
+		return nil, errors.New("table does not contain any rows")
 	}
 	// from termui/table.go draw method.
 	columnWidths := make([]int, 0)
