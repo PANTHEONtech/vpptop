@@ -14,15 +14,14 @@
  * limitations under the License.
  */
 
-package cmd
+package command
 
 import (
 	"fmt"
-	"log"
-	"os"
-
 	"git.fd.io/govpp.git/adapter"
 	"github.com/spf13/cobra"
+	"log"
+	"os"
 )
 
 var rootCmd = &cobra.Command{
@@ -34,7 +33,7 @@ shown in dynamic terminal user interface. vpptop supports the following metrics:
 Interface:      stats: RX/TX packets/bytes, packet errors/drops/punts/IPv4...
 Node stats:     clocks, vectors, calls, suspends...
 Error counters: node, reason...
-Memory usage:   free, used...
+GetMemory usage:   free, used...
 Thread info:    name, type, PID...`,
 
 	RunE: func(cmd *cobra.Command, args []string) error {

@@ -62,4 +62,4 @@ func (v *exitView) Widgets() []tui.Drawable { return []tui.Drawable{v.exitScreen
 func (v *exitView) Update(interface{})            {}
 func (v *exitView) ItemsList() []string           { return nil }
 func (v *exitView) Filter(gui.Event)              {}
-func (v *exitView) OnScrollEvent(event gui.Event) {}
+func (v *exitView) OnScrollEvent(_ gui.Event) {}

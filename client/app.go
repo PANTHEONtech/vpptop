@@ -28,6 +28,7 @@ import (
 	"github.com/PantheonTechnologies/vpptop/gui/views"
 	"github.com/PantheonTechnologies/vpptop/gui/xtui"
 	"github.com/PantheonTechnologies/vpptop/stats"
+	"github.com/PantheonTechnologies/vpptop/stats/api"
 )
 
 // Index for each TableView. (total of 5 tabs)
@@ -46,13 +47,19 @@ const (
 	RowsPerMemory = 8
 )
 
+// VPP API handler definition list determines supported versions
+// - VPPs supported by Ligato VPP-Agent
+// - VPPs supported by the local implementation
+var Defs []api.HandlerDef
+
+// App groups VPP provider, GUI and caches
 type App struct {
-	gui *gui.TermWindow
-	vpp *stats.VPP
+	gui         *gui.TermWindow
+	vppProvider api.VppProviderAPI
 
 	// Cache for interface stats to
-	// be able to calculate bytes/s packates/s.
-	IfCache []stats.Interface
+	// be able to calculate bytes/s packets/s.
+	IfCache []api.Interface
 
 	// sortBy carries information used at sorting stats
 	// for each tab.
@@ -72,14 +79,17 @@ type App struct {
 	cancel   context.CancelFunc
 }
 
-func NewApp(lightTheme bool) *App {
+func NewApp(lightTheme bool) (*App, error) {
 	app := new(App)
 
 	app.sortLock = new(sync.Mutex)
 	app.tabLock = new(sync.Mutex)
 	app.vppLock = new(sync.Mutex)
 
-	app.vpp = new(stats.VPP)
+	if len(Defs) == 0 {
+		return nil, fmt.Errorf("no VPP handler definition was provided")
+	}
+	app.vppProvider = stats.NewVppProvider(Defs)
 	app.wg = new(sync.WaitGroup)
 	app.sortBy = make([]struct {
 		asc   bool
@@ -130,7 +140,7 @@ func NewApp(lightTheme bool) *App {
 				xtui.TableRows{{"Name", "Idx", "State", "MTU(L3/IP4/IP6/MPLS)", "RxCounters", "RxCount", "TxCounters", "TxCount", "Drops", "Punts", "IP4", "IP6"}},
 				IfaceStatIfaceName,
 				RowsPerIface,
-				[]int{24, 5, 5, 20, 10, 16, 11, 16, 11, 11, 11, views.TableColResizedWithWindow},
+				[]int{24, 5, 5, 20, 10, 16, 11, 16, 11, 11, 11, views.Resize},
 				lightTheme,
 			),
 			// node tab.
@@ -144,10 +154,10 @@ func NewApp(lightTheme bool) *App {
 					"Suspends",
 					"Vectors/Calls",
 				},
-				xtui.TableRows{{"NodeName", "NodeIndex", "Clocks", "Vectors", "Calls", "Suspends", "Vectors/Calls"}},
+				xtui.TableRows{{"Name", "State", "Calls", "Vectors", "Suspends", "Clocks", "Vectors/Calls"}},
 				NodeStatNodeName,
 				1,
-				[]int{50, 10, views.TableColResizedWithWindow, views.TableColResizedWithWindow, views.TableColResizedWithWindow, views.TableColResizedWithWindow, 22},
+				[]int{50, views.Resize, views.Resize, views.Resize, views.Resize, views.Resize, 22},
 				lightTheme,
 			),
 			// errors tab.
@@ -165,7 +175,7 @@ func NewApp(lightTheme bool) *App {
 				xtui.TableRows{{"Thread/ID/Name", "Current memory usage per Thread"}},
 				MemoryStatName,
 				RowsPerMemory,
-				[]int{30, views.TableColResizedWithWindow},
+				[]int{30, views.Resize},
 				lightTheme,
 			),
 			// threads tab.
@@ -183,18 +193,18 @@ func NewApp(lightTheme bool) *App {
 		views.NewExitView(),
 	)
 
-	return app
+	return app, nil
 }
 
 // Init initializes app.
-func (app *App) Init(soc, raddr string) error {
-	switch raddr {
+func (app *App) Init(soc, rAddr string) error {
+	switch rAddr {
 	case "":
-		if err := app.vpp.Connect(soc); err != nil {
+		if err := app.vppProvider.Connect(soc); err != nil {
 			return err
 		}
 	default:
-		if err := app.vpp.ConnectRemote(raddr); err != nil {
+		if err := app.vppProvider.ConnectRemote(rAddr); err != nil {
 			return err
 		}
 	}
@@ -203,12 +213,7 @@ func (app *App) Init(soc, raddr string) error {
 		return err
 	}
 
-	v, err := app.vpp.Version()
-	if err != nil {
-		return err
-	}
-
-	app.gui.SetVersion(v)
+	app.gui.SetVersion(app.vppProvider.GetVersion())
 
 	return nil
 }
@@ -226,7 +231,6 @@ func (app *App) Run() {
 
 	app.wg.Add(1)
 
-
 	go func() {
 		updateTicker := time.NewTicker(1 * time.Second).C
 
@@ -237,7 +241,7 @@ func (app *App) Run() {
 
 				switch currTab() {
 				case Interfaces:
-					ifaces, err := app.vpp.GetInterfaces(ctx)
+					ifaces, err := app.vppProvider.GetInterfaces(ctx)
 					if err != nil {
 						log.Printf("error occured while polling interface stats: %v\n", err)
 					}
@@ -250,7 +254,7 @@ func (app *App) Run() {
 					app.gui.ViewAtTab(Interfaces).Update(app.formatInterfaces(ifaces))
 
 				case Nodes:
-					nodes, err := app.vpp.GetNodes(ctx)
+					nodes, err := app.vppProvider.GetNodes(ctx)
 					if err != nil {
 						log.Printf("error occured while polling nodes stats: %v\n", err)
 					}
@@ -263,7 +267,7 @@ func (app *App) Run() {
 					app.gui.ViewAtTab(Nodes).Update(app.formatNodes(nodes))
 
 				case Errors:
-					errors, err := app.vpp.GetErrors(ctx)
+					errors, err := app.vppProvider.GetErrors(ctx)
 					if err != nil {
 						log.Printf("error occured while polling errors stats: %v\n", err)
 					}
@@ -276,7 +280,7 @@ func (app *App) Run() {
 					app.gui.ViewAtTab(Errors).Update(app.formatErrors(errors))
 
 				case Memory:
-					memstats, err := app.vpp.Memory(ctx)
+					memstats, err := app.vppProvider.GetMemory(ctx)
 					if err != nil {
 						log.Printf("error occured while polling memory stats: %v\n", err)
 					}
@@ -284,7 +288,7 @@ func (app *App) Run() {
 					app.gui.ViewAtTab(Memory).Update(app.formatMemstats(memstats))
 
 				case Threads:
-					threads, err := app.vpp.Threads(ctx)
+					threads, err := app.vppProvider.GetThreads(ctx)
 					if err != nil {
 						log.Printf("error occured while polling threads stats: %v\n", err)
 					}
@@ -312,16 +316,16 @@ func (app *App) Run() {
 
 			switch tab {
 			case Interfaces:
-				if err := app.vpp.ClearIfaceCounters(ctx); err != nil {
+				if err := app.vppProvider.ClearInterfaceCounters(ctx); err != nil {
 					log.Printf("error occured while clearing interface stats: %v\n", err)
 				}
 				app.IfCache = nil
 			case Nodes:
-				if err := app.vpp.ClearRuntimeCounters(ctx); err != nil {
+				if err := app.vppProvider.ClearRuntimeCounters(ctx); err != nil {
 					log.Printf("error occured while clearing node stats: %v\n", err)
 				}
 			case Errors:
-				if err := app.vpp.ClearErrorCounters(ctx); err != nil {
+				if err := app.vppProvider.ClearErrorCounters(ctx); err != nil {
 					log.Printf("error occured while clearing error stats: %v\n", err)
 				}
 			}
@@ -356,7 +360,7 @@ func (app *App) Run() {
 		app.cancel()
 		app.wg.Wait()
 		app.gui.Destroy()
-		app.vpp.Disconnect()
+		app.vppProvider.Disconnect()
 	})
 
 	app.gui.AddOnTabSwitchCallback(func(event gui.Event) {
@@ -369,7 +373,7 @@ func (app *App) Run() {
 }
 
 // formatInterfaces formats interface stats to xtui.TableRows
-func (app *App) formatInterfaces(ifaces []stats.Interface) xtui.TableRows {
+func (app *App) formatInterfaces(ifaces []api.Interface) xtui.TableRows {
 	nameToIdx := make(map[string]int)
 
 	for i, iface := range app.IfCache {
@@ -419,11 +423,11 @@ func (app *App) formatInterfaces(ifaces []stats.Interface) xtui.TableRows {
 		// start from the second row, the first is taken up
 		// by the interface name.
 		row := RowsPerIface*i + 1
-		ip := len(iface.IPAddrs)
+		ip := len(iface.IPAddresses)
 		maxRow := RowsPerIface*i + RowsPerIface // last row of each entry.
 
 		for ip > 0 && row < maxRow {
-			rows[row][0] = strings.Split(iface.IPAddrs[ip-1], "/")[0]
+			rows[row][0] = strings.Split(iface.IPAddresses[ip-1], "/")[0]
 			ip--
 			row++
 		}
@@ -435,18 +439,18 @@ func (app *App) formatInterfaces(ifaces []stats.Interface) xtui.TableRows {
 }
 
 // formatNodes formats nodes stats to xtui.TableRows
-func (app *App) formatNodes(nodes []stats.Node) xtui.TableRows {
+func (app *App) formatNodes(nodes []api.Node) xtui.TableRows {
 	rows := make(xtui.TableRows, len(nodes))
 
 	for i, node := range nodes {
-		rows[i] = strings.Split(fmt.Sprintf("%s %d %d %d %d %d %.2f", node.Name, node.Index, uint64(node.Clocks), node.Vectors, node.Calls, node.Suspends, node.VectorsPerCall), " ")
+		rows[i] = strings.Split(fmt.Sprintf("%s %s %d %d %d %d %.2f", node.Name, node.State, node.Calls, node.Vectors, node.Suspends, uint64(node.Clocks), node.VectorsPerCall), " ")
 	}
 
 	return rows
 }
 
 // formatErrors formats error stats to xtui.TableRows
-func (app *App) formatErrors(errors []stats.Error) xtui.TableRows {
+func (app *App) formatErrors(errors []api.Error) xtui.TableRows {
 	rows := make(xtui.TableRows, len(errors))
 
 	for i, errorC := range errors {
@@ -463,7 +467,7 @@ func (app *App) formatErrors(errors []stats.Error) xtui.TableRows {
 
 // formatMemstats formats memory stats to xtui.TableRows
 func (app *App) formatMemstats(memstats []string) xtui.TableRows {
-	// stats.Memory returns the stats as []string
+	// vppProvider.GetMemory returns the stats as []string
 	// where 7 rows corresponds to one entry.
 	const rowsPerEntry = 7
 	count := len(memstats) / rowsPerEntry         // number of entries.
@@ -483,7 +487,7 @@ func (app *App) formatMemstats(memstats []string) xtui.TableRows {
 }
 
 // formatThreads formats memory stats to xtui.TableRows
-func (app *App) formatThreads(threads []stats.ThreadData) xtui.TableRows {
+func (app *App) formatThreads(threads []api.ThreadData) xtui.TableRows {
 	rows := make(xtui.TableRows, len(threads))
 
 	for i, thread := range threads {

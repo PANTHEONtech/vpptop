@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cmd
+package command
 
 import (
 	"fmt"
@@ -39,12 +39,15 @@ func startClient(socket, raddr string, file io.Writer) error {
 		gui.SetLightTheme()
 	}
 
-	app := client.NewApp(lightTheme)
-	if err := app.Init(socket, raddr); err != nil {
+	log.SetOutput(file)
+	app, err := client.NewApp(lightTheme)
+	if err != nil {
+		return fmt.Errorf("error occurred during client init: %v", err)
+	}
+	if err = app.Init(socket, raddr); err != nil {
 		return fmt.Errorf("error occurred during client init: %v", err)
 	}
 
-	log.SetOutput(file)
 	app.Run()
 	return nil
 }

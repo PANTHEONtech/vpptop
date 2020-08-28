@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cmd
+package command
 
 import (
 	"errors"
@@ -60,15 +60,15 @@ var nodeCmd = &cobra.Command{
 
 		log.Println("failed to resolve addr:", args[0])
 
-		raddr, err := cmd.Flags().GetString("addr")
+		rAddr, err := cmd.Flags().GetString("addr")
 		if err != nil {
 			return err
 		}
 
-		log.Println("trying to connect to a local server at:", raddr)
+		log.Println("trying to connect to a local server at:", rAddr)
 
 		for i := 0; i < 3; i++ {
-			if _, err = proxy.Connect(raddr); err == nil {
+			if _, err = proxy.Connect(rAddr); err == nil {
 				break
 			}
 			time.Sleep(1 * time.Second)
@@ -76,7 +76,7 @@ var nodeCmd = &cobra.Command{
 
 		if err != nil {
 			log.Println("no server found")
-			log.Println("starting local server at:", raddr)
+			log.Println("starting local server at:", rAddr)
 
 			binapiSocket, err := cmd.Flags().GetString("binapi-socket")
 			if err != nil {
@@ -109,11 +109,11 @@ var nodeCmd = &cobra.Command{
 
 				defer p.DisconnectBinapi()
 
-				p.ListenAndServe(raddr)
+				p.ListenAndServe(rAddr)
 			}()
 		}
 
-		return startClient("", raddr, logs)
+		return startClient("", rAddr, logs)
 	},
 }
 

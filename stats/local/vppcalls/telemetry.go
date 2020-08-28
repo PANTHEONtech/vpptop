@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2020 Cisco and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at:
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package vppcalls
 
 import (
@@ -7,42 +23,40 @@ import (
 	"strconv"
 	"strings"
 
-	"git.fd.io/govpp.git/api"
-	"github.com/PantheonTechnologies/vpptop/local/binapi/vpe"
+	govppapi "git.fd.io/govpp.git/api"
+	"github.com/PantheonTechnologies/vpptop/stats/api"
+	"github.com/PantheonTechnologies/vpptop/stats/local/binapi/vpe"
 	"github.com/pkg/errors"
-	telemetrycalls "go.ligato.io/vpp-agent/v2/plugins/telemetry/vppcalls"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp"
 )
 
 // TelemetryVppAPI defines telemetry-specific methods
 type TelemetryVppAPI interface {
-	GetInterfaceStats(context.Context) (*api.InterfaceStats, error)
-	GetNodeCounters(context.Context) (*telemetrycalls.NodeCounterInfo, error)
-	GetRuntimeInfo(context.Context) (*telemetrycalls.RuntimeInfo, error)
+	GetInterfaceStats(context.Context) (*govppapi.InterfaceStats, error)
+	GetNodeCounters(context.Context) (*api.NodeCounterInfo, error)
+	GetRuntimeInfo(context.Context) (*api.RuntimeInfo, error)
 }
 
 // TelemetryHandler implements TelemetryVppAPI
 type TelemetryHandler struct {
-	sp      api.StatsProvider
-	ifStats api.InterfaceStats
+	sp      govppapi.StatsProvider
+	ifStats govppapi.InterfaceStats
 	vpeRpc  vpe.RPCService
 }
 
 // NewTelemetryHandler returns a new instance of the TelemetryVppAPI
-func NewTelemetryHandler(ch api.Channel, c vpp.Client) TelemetryVppAPI {
+func NewTelemetryHandler(ch govppapi.Channel, sp govppapi.StatsProvider) TelemetryVppAPI {
 	return &TelemetryHandler{
 		vpeRpc: vpe.NewServiceClient(ch),
-		sp:     c.Stats(),
+		sp:     sp,
 	}
 }
 
 // Regular expressions used to parse telemetry output
 var (
 	// 'show runtime'
-	runtimeRe = regexp.MustCompile(`(?:-+\n)?(?:Thread (\d+) (\w+)(?: \(lcore \d+\))?\n)?` +
-		`Time ([0-9\.e-]+), average vectors/node ([0-9\.e-]+), last (\d+) main loops ([0-9\.e-]+) per node ([0-9\.e-]+)\s+` +
+	runtimeRe = regexp.MustCompile(`Time ([0-9\.e-]+), ([0-9]+) sec internal node vector rate ([0-9\.e-]+) loops/sec ([0-9\.e-]+)\s+` +
 		`vector rates in ([0-9\.e-]+), out ([0-9\.e-]+), drop ([0-9\.e-]+), punt ([0-9\.e-]+)\n` +
-		`\s+Name\s+State\s+Calls\s+Vectors\s+Suspends\s+Clocks\s+Vectors/Call\s+(?:Perf Ticks\s+)?` +
+		`\s+Name\s+State\s+Calls\s+Vectors\s+Suspends\s+Clocks\s+Vectors/Call\s+` +
 		`((?:[\w-:\.]+\s+\w+(?:[ -]\w+)*\s+\d+\s+\d+\s+\d+\s+[0-9\.e-]+\s+[0-9\.e-]+\s+)+)`)
 	// 'show runtime' items
 	runtimeItemsRe = regexp.MustCompile(`([\w-:.]+)\s+(\w+(?:[ -]\w+)*)\s+(\d+)\s+(\d+)\s+(\d+)\s+([0-9.e-]+)\s+([0-9.e-]+)\s+`)
@@ -50,7 +64,7 @@ var (
 	nodeCountersRe = regexp.MustCompile(`^\s+(\d+)\s+([\w-/]+)\s+(.+)$`)
 )
 
-func (h *TelemetryHandler) GetInterfaceStats(context.Context) (*api.InterfaceStats, error) {
+func (h *TelemetryHandler) GetInterfaceStats(context.Context) (*govppapi.InterfaceStats, error) {
 	err := h.sp.GetInterfaceStats(&h.ifStats)
 	if err != nil {
 		return nil, err
@@ -58,8 +72,8 @@ func (h *TelemetryHandler) GetInterfaceStats(context.Context) (*api.InterfaceSta
 	return &h.ifStats, nil
 }
 
-func (h *TelemetryHandler) GetNodeCounters(ctx context.Context) (*telemetrycalls.NodeCounterInfo, error) {
-	var counters []telemetrycalls.NodeCounter
+func (h *TelemetryHandler) GetNodeCounters(ctx context.Context) (*api.NodeCounterInfo, error) {
+	var counters []api.NodeCounter
 	data, err := h.vpeRpc.CliInband(ctx, &vpe.CliInband{
 		Cmd: "show node counters",
 	})
@@ -83,18 +97,18 @@ func (h *TelemetryHandler) GetNodeCounters(ctx context.Context) (*telemetrycalls
 		}
 		fields := matches[1:]
 
-		counters = append(counters, telemetrycalls.NodeCounter{
+		counters = append(counters, api.NodeCounter{
 			Value: uint64(strToFloat64(fields[0])),
 			Node:  fields[1],
 			Name:  fields[2],
 		})
 	}
-	return &telemetrycalls.NodeCounterInfo{
+	return &api.NodeCounterInfo{
 		Counters: counters,
 	}, nil
 }
 
-func (h *TelemetryHandler) GetRuntimeInfo(ctx context.Context) (*telemetrycalls.RuntimeInfo, error) {
+func (h *TelemetryHandler) GetRuntimeInfo(ctx context.Context) (*api.RuntimeInfo, error) {
 	cliResp, err := h.vpeRpc.CliInband(ctx, &vpe.CliInband{
 		Cmd: "show runtime",
 	})
@@ -103,38 +117,35 @@ func (h *TelemetryHandler) GetRuntimeInfo(ctx context.Context) (*telemetrycalls.
 	}
 	threadMatches := runtimeRe.FindAllStringSubmatch(cliResp.Reply, -1)
 	if len(threadMatches) == 0 && cliResp.Reply != "" {
-		return nil, fmt.Errorf("invalid command: %q", cliResp.Reply)
+		return nil, fmt.Errorf("invalid command: %q, thread matches: %d", cliResp.Reply, len(threadMatches))
 	}
 
-	var threads []telemetrycalls.RuntimeThread
+	var threads []api.RuntimeThread
 	for _, matches := range threadMatches {
 		fields := matches[1:]
-		if len(fields) != 12 {
+		if len(fields) != 9 {
 			return nil, fmt.Errorf("invalid runtime data for thread (len=%v): %q", len(fields), matches[0])
 		}
-		thread := telemetrycalls.RuntimeThread{
-			ID:                  uint(strToFloat64(fields[0])),
-			Name:                fields[1],
-			Time:                strToFloat64(fields[2]),
-			AvgVectorsPerNode:   strToFloat64(fields[3]),
-			LastMainLoops:       uint64(strToFloat64(fields[4])),
-			VectorsPerMainLoop:  strToFloat64(fields[5]),
-			VectorLengthPerNode: strToFloat64(fields[6]),
-			VectorRatesIn:       strToFloat64(fields[7]),
-			VectorRatesOut:      strToFloat64(fields[8]),
-			VectorRatesDrop:     strToFloat64(fields[9]),
-			VectorRatesPunt:     strToFloat64(fields[10]),
+		thread := api.RuntimeThread{
+			Time:               strToFloat64(fields[0]),
+			AvgVectorsPerNode:  strToFloat64(fields[1]),
+			LastMainLoops:      uint64(strToFloat64(fields[2])),
+			VectorsPerMainLoop: strToFloat64(fields[3]),
+			VectorRatesIn:      strToFloat64(fields[4]),
+			VectorRatesOut:     strToFloat64(fields[5]),
+			VectorRatesDrop:    strToFloat64(fields[6]),
+			VectorRatesPunt:    strToFloat64(fields[7]),
 		}
 
-		itemMatches := runtimeItemsRe.FindAllStringSubmatch(fields[11], -1)
+		itemMatches := runtimeItemsRe.FindAllStringSubmatch(fields[8], -1)
 		for _, matches := range itemMatches {
 			fields := matches[1:]
 			if len(fields) != 7 {
 				return nil, fmt.Errorf("invalid runtime data for thread item: %q", matches[0])
 			}
-			thread.Items = append(thread.Items, telemetrycalls.RuntimeItem{
+			thread.Items = append(thread.Items, api.RuntimeItem{
 				Name:           fields[0],
-				State:          fields[1],
+				State:          strings.Replace(fields[1], " ", "-", -1),
 				Calls:          uint64(strToFloat64(fields[2])),
 				Vectors:        uint64(strToFloat64(fields[3])),
 				Suspends:       uint64(strToFloat64(fields[4])),
@@ -146,7 +157,7 @@ func (h *TelemetryHandler) GetRuntimeInfo(ctx context.Context) (*telemetrycalls.
 		threads = append(threads, thread)
 	}
 
-	return &telemetrycalls.RuntimeInfo{
+	return &api.RuntimeInfo{
 		Threads: threads,
 	}, nil
 }

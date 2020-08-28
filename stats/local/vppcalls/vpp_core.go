@@ -1,30 +1,47 @@
+/*
+ * Copyright (c) 2020 Cisco and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at:
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package vppcalls
 
 import (
 	"context"
 	"fmt"
-	"git.fd.io/govpp.git/api"
-	"github.com/PantheonTechnologies/vpptop/local/binapi/vpe"
+	govppapi "git.fd.io/govpp.git/api"
+	"github.com/PantheonTechnologies/vpptop/stats/api"
+	"github.com/PantheonTechnologies/vpptop/stats/local/binapi/vpe"
 	"github.com/prometheus/common/log"
-	govppcalls "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls"
 	"strings"
 )
 
+// VppCoreAPI defines vpe-specific methods
 type VppCoreAPI interface {
 	RunCli(ctx context.Context, cmd string) (string, error)
-	GetPlugins(context.Context) ([]govppcalls.PluginInfo, error)
-	GetVersion(context.Context) (*govppcalls.VersionInfo, error)
-	GetSession(context.Context) (*govppcalls.SessionInfo, error)
+	GetPlugins(context.Context) ([]api.PluginInfo, error)
+	GetVersion(context.Context) (*api.VersionInfo, error)
+	GetSession(context.Context) (*api.SessionInfo, error)
 }
 
 // VppCoreHandler implements VppCoreAPI
 type VppCoreHandler struct {
-	ch     api.Channel
+	ch     govppapi.Channel
 	vpeRpc vpe.RPCService
 }
 
 // NewVppCoreHandler returns a new instance of the VppCoreAPI
-func NewVppCoreHandler(ch api.Channel) VppCoreAPI {
+func NewVppCoreHandler(ch govppapi.Channel) VppCoreAPI {
 	h := &VppCoreHandler{
 		vpeRpc: vpe.NewServiceClient(ch),
 		ch:     ch,
@@ -42,7 +59,7 @@ func (h VppCoreHandler) RunCli(ctx context.Context, cmd string) (string, error) 
 	return resp.Reply, nil
 }
 
-func (h VppCoreHandler) GetPlugins(ctx context.Context) ([]govppcalls.PluginInfo, error) {
+func (h VppCoreHandler) GetPlugins(ctx context.Context) ([]api.PluginInfo, error) {
 	const pluginPathPrefix = "Plugin path is:"
 
 	out, err := h.RunCli(ctx, "show plugins")
@@ -64,7 +81,7 @@ func (h VppCoreHandler) GetPlugins(ctx context.Context) ([]govppcalls.PluginInfo
 		return nil, fmt.Errorf("plugin path not found in output for 'show plugins'")
 	}
 
-	var plugins []govppcalls.PluginInfo
+	var plugins []api.PluginInfo
 	for _, line := range lines {
 		fields := strings.Fields(line)
 		if len(fields) < 3 {
@@ -77,7 +94,7 @@ func (h VppCoreHandler) GetPlugins(ctx context.Context) ([]govppcalls.PluginInfo
 		if i <= 0 {
 			continue
 		}
-		plugin := govppcalls.PluginInfo{
+		plugin := api.PluginInfo{
 			Name:        strings.TrimSuffix(fields[1], "_plugin.so"),
 			Path:        fields[1],
 			Version:     fields[2],
@@ -89,12 +106,12 @@ func (h VppCoreHandler) GetPlugins(ctx context.Context) ([]govppcalls.PluginInfo
 	return plugins, nil
 }
 
-func (h VppCoreHandler) GetVersion(ctx context.Context) (*govppcalls.VersionInfo, error) {
+func (h VppCoreHandler) GetVersion(ctx context.Context) (*api.VersionInfo, error) {
 	version, err := h.vpeRpc.ShowVersion(ctx, new(vpe.ShowVersion))
 	if err != nil {
 		return nil, err
 	}
-	info := &govppcalls.VersionInfo{
+	info := &api.VersionInfo{
 		Program:        version.Program,
 		Version:        version.Version,
 		BuildDate:      version.BuildDate,
@@ -103,12 +120,12 @@ func (h VppCoreHandler) GetVersion(ctx context.Context) (*govppcalls.VersionInfo
 	return info, nil
 }
 
-func (h VppCoreHandler) GetSession(ctx context.Context) (*govppcalls.SessionInfo, error) {
+func (h VppCoreHandler) GetSession(ctx context.Context) (*api.SessionInfo, error) {
 	ctrlPing, err := h.vpeRpc.ControlPing(ctx, new(vpe.ControlPing))
 	if err != nil {
 		return nil, fmt.Errorf("control ping error: %v", err)
 	}
-	info := &govppcalls.SessionInfo{
+	info := &api.SessionInfo{
 		PID:       ctrlPing.VpePID,
 		ClientIdx: ctrlPing.ClientIndex,
 	}
