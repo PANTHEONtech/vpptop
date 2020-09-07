@@ -44,9 +44,9 @@ type TelemetryHandler struct {
 }
 
 // NewTelemetryHandler returns a new instance of the TelemetryVppAPI
-func NewTelemetryHandler(ch govppapi.Channel, sp govppapi.StatsProvider) TelemetryVppAPI {
+func NewTelemetryHandler(conn govppapi.Connection, sp govppapi.StatsProvider) TelemetryVppAPI {
 	return &TelemetryHandler{
-		vpeRpc: vpe.NewServiceClient(ch),
+		vpeRpc: vpe.NewServiceClient(conn),
 		sp:     sp,
 	}
 }

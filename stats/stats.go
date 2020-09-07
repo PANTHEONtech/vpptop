@@ -78,13 +78,17 @@ func (p *vppProvider) Connect(soc string) error {
 
 	p.vppClient = api.NewVppClient(vppConn, statsConn)
 
-	var handlerFound bool
+	var (
+		handler       api.HandlerAPI
+		handlerFound  bool
+		binapiVersion string
+	)
 	for _, handlerDef := range p.handlerDefs {
-		handler, isCompatible, err := handlerDef.IsHandlerCompatible(p.vppClient, false)
+		handler, binapiVersion, err = handlerDef.IsHandlerCompatible(p.vppClient, false)
 		if err != nil {
 			return err
 		}
-		if isCompatible {
+		if binapiVersion != "" {
 			p.handler = handler
 			handlerFound = true
 			break
@@ -144,13 +148,17 @@ func (p *vppProvider) ConnectRemote(rAddr string) error {
 
 	p.vppClient = api.NewProxyClient(client, statsConn)
 
-	var handlerFound bool
+	var (
+		handler       api.HandlerAPI
+		handlerFound  bool
+		binapiVersion string
+	)
 	for _, handlerDef := range p.handlerDefs {
-		handler, isCompatible, err := handlerDef.IsHandlerCompatible(p.vppClient, true)
+		handler, binapiVersion, err = handlerDef.IsHandlerCompatible(p.vppClient, true)
 		if err != nil {
 			return err
 		}
-		if isCompatible {
+		if binapiVersion != "" {
 			p.handler = handler
 			handlerFound = true
 			break
@@ -182,6 +190,7 @@ func (p *vppProvider) ConnectRemote(rAddr string) error {
 		VersionInfo: *p.vppVersion,
 		SessionInfo: *session,
 		Plugins:     plugins,
+		Version:     binapiVersion,
 	})
 
 	return nil

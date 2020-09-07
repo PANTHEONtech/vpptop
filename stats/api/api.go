@@ -84,10 +84,10 @@ type HandlerAPI interface {
 }
 
 // HandlerDef is a handler definition - it verifies whether the definition is compatible
-// with connected VPP version. If so, the flag is set to 'true' and the handler is returned.
+// with connected VPP version. If so, the binapi version together with the handler is returned.
 // Remote handler in addition also registers VPP API message type records.
 type HandlerDef interface {
-	IsHandlerCompatible(c *VppClient, isRemote bool) (HandlerAPI, bool, error)
+	IsHandlerCompatible(c *VppClient, isRemote bool) (HandlerAPI, string, error)
 }
 
 type Node = RuntimeItem
@@ -118,6 +118,7 @@ type VPPInfo struct {
 	VersionInfo VersionInfo
 	SessionInfo SessionInfo
 	Plugins     []PluginInfo
+	Version     string
 }
 
 // VersionInfo is a VPP version

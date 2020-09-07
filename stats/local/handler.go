@@ -23,7 +23,7 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/PantheonTechnologies/vpptop/stats/api"
 	"github.com/PantheonTechnologies/vpptop/stats/local/binapi/dhcp"
-	"github.com/PantheonTechnologies/vpptop/stats/local/binapi/interfaces"
+	interfaces "github.com/PantheonTechnologies/vpptop/stats/local/binapi/interface"
 	"github.com/PantheonTechnologies/vpptop/stats/local/binapi/ip"
 	"github.com/PantheonTechnologies/vpptop/stats/local/binapi/vpe"
 	"github.com/PantheonTechnologies/vpptop/stats/local/vppcalls"
@@ -47,15 +47,15 @@ func init() {
 // compatibility with the version of the connected VPP
 type HandlerDef struct{}
 
-func (d *HandlerDef) IsHandlerCompatible(c *api.VppClient, isRemote bool) (api.HandlerAPI, bool, error) {
+func (d *HandlerDef) IsHandlerCompatible(c *api.VppClient, isRemote bool) (api.HandlerAPI, string, error) {
 	ch, err := c.NewAPIChannel()
 	if err != nil {
-		return nil, false, err
+		return nil, "", err
 	}
 	if err := ch.CheckCompatiblity(localMsgs...); err == nil {
-		return NewLocalHandler(ch, c.Stats(), isRemote), true, nil
+		return NewLocalHandler(c, ch, isRemote), VPPVersion, nil
 	}
-	return nil, false, nil
+	return nil, "", nil
 }
 
 // Handler makes use of the local implementation to obtain VPP data.
@@ -67,16 +67,16 @@ type Handler struct {
 }
 
 // NewLocalHandler returns new instance of the local handler
-func NewLocalHandler(ch govppapi.Channel, sp govppapi.StatsProvider, isRemote bool) *Handler {
+func NewLocalHandler(c *api.VppClient, ch govppapi.Channel, isRemote bool) *Handler {
 	if isRemote {
 		for _, msg := range localMsgs {
 			gob.Register(msg)
 		}
 	}
 	return &Handler{
-		vppCoreCalls:      vppcalls.NewVppCoreHandler(ch),
+		vppCoreCalls:      vppcalls.NewVppCoreHandler(c.Connection(), ch),
 		interfaceVppCalls: vppcalls.NewInterfaceHandler(ch),
-		telemetryVppCalls: vppcalls.NewTelemetryHandler(ch, sp),
+		telemetryVppCalls: vppcalls.NewTelemetryHandler(c.Connection(), c.Stats()),
 		apiChan:           ch,
 	}
 }
