@@ -6,7 +6,6 @@ require (
 	git.fd.io/govpp.git v0.3.6-0.20200907101751-e3cea0cd4447
 	github.com/gizak/termui/v3 v3.1.0
 	github.com/imdario/mergo v0.3.8 // indirect
-	github.com/ligato/cn-infra v2.2.0+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/common v0.4.0
 	github.com/spf13/cobra v0.0.5
