@@ -20,13 +20,15 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/PantheonTechnologies/vpptop/stats/local/binapi/interface_types"
+	"github.com/PantheonTechnologies/vpptop/stats/local/binapi/ip_types"
 	"net"
 	"strings"
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/PantheonTechnologies/vpptop/stats/api"
 	dhcpapi "github.com/PantheonTechnologies/vpptop/stats/local/binapi/dhcp"
-	"github.com/PantheonTechnologies/vpptop/stats/local/binapi/interfaces"
+	interfaces "github.com/PantheonTechnologies/vpptop/stats/local/binapi/interface"
 	"github.com/PantheonTechnologies/vpptop/stats/local/binapi/ip"
 )
 
@@ -114,7 +116,7 @@ func (h *InterfaceHandler) dumpInterfaces(ifIdxs ...uint32) (map[uint32]*api.Int
 	}
 	// All interfaces
 	reqCtx := h.ch.SendMultiRequest(&interfaces.SwInterfaceDump{
-		SwIfIndex: interfaces.InterfaceIndex(ifIdx),
+		SwIfIndex: interface_types.InterfaceIndex(ifIdx),
 	})
 	for {
 		ifDetails := &interfaces.SwInterfaceDetails{}
@@ -129,7 +131,7 @@ func (h *InterfaceHandler) dumpInterfaces(ifIdxs ...uint32) (map[uint32]*api.Int
 		name := strings.TrimRight(ifDetails.InterfaceName, "\x00")
 		details := &api.InterfaceDetails{
 			Name:         strings.TrimRight(ifDetails.Tag, "\x00"),
-			IsEnabled:    ifDetails.Flags&interfaces.IF_STATUS_API_FLAG_ADMIN_UP != 0,
+			IsEnabled:    ifDetails.Flags&interface_types.IF_STATUS_API_FLAG_ADMIN_UP != 0,
 			InternalName: name,
 			SwIfIndex:    uint32(ifDetails.SwIfIndex),
 			MTU:          ifDetails.Mtu,
@@ -193,7 +195,7 @@ func (h *InterfaceHandler) dumpIPAddressDetails(ifs map[uint32]*api.InterfaceDet
 	// Dump IP addresses of each interface.
 	for idx := range ifs {
 		reqCtx := h.ch.SendMultiRequest(&ip.IPAddressDump{
-			SwIfIndex: ip.InterfaceIndex(idx),
+			SwIfIndex: interface_types.InterfaceIndex(idx),
 			IsIPv6:    isIPv6,
 		})
 		for {
@@ -222,7 +224,7 @@ func (h *InterfaceHandler) processIPDetails(ifs map[uint32]*api.InterfaceDetails
 	var ipAddr string
 	ipByte := make([]byte, 16)
 	copy(ipByte[:], ipDetails.Prefix.Address.Un.XXX_UnionData[:])
-	if ipDetails.Prefix.Address.Af == ip.ADDRESS_IP6 {
+	if ipDetails.Prefix.Address.Af == ip_types.ADDRESS_IP6 {
 		ipAddr = fmt.Sprintf("%s/%d", net.IP(ipByte).To16().String(), uint32(ipDetails.Prefix.Len))
 	} else {
 		ipAddr = fmt.Sprintf("%s/%d", net.IP(ipByte[:4]).To4().String(), uint32(ipDetails.Prefix.Len))
@@ -238,7 +240,7 @@ func (h *InterfaceHandler) processIPDetails(ifs map[uint32]*api.InterfaceDetails
 	ifDetails.IPAddresses = append(ifDetails.IPAddresses, ipAddr)
 }
 
-func dhcpAddressToString(address dhcpapi.Address, maskWidth uint32, isIPv6 bool) string {
+func dhcpAddressToString(address ip_types.Address, maskWidth uint32, isIPv6 bool) string {
 	dhcpIPByte := make([]byte, 16)
 	copy(dhcpIPByte[:], address.Un.XXX_UnionData[:])
 	if isIPv6 {

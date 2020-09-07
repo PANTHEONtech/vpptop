@@ -28,21 +28,20 @@ VPPTop currently supports following metrics:
 ## Requirements
 
 VPPTop requires [Go][go-download] **1.11** (or later) to install and run. Supported [VPP][wiki-vpp] versions are as follows:
-- **19.04.2**
+- **19.04.4**
 - **19.08.1**
-- **20.01-rc0~324**
-- **20.01-rc0~379**
+- **20.01**
 
 Supported by the local:
-- **20.09-rc0~284**
+- **20.09-rc0~389**
 
-All versions except the local one are enabled via Ligato [vpp-agent][vpp-agent] (current version is v2.5.0-alpha). The local version implementation resides directly in the VPPTop. The meaning of the local VPP support is to easily allow additional VPP versions without manipulating or updating external dependencies. The guide about how to change local in order to support custom version can be found later in the document.
+All versions except the local one are enabled via Ligato [vpp-agent][vpp-agent] (current version is v3.1.0). The local version implementation resides directly in the VPPTop. The meaning of the local VPP support is to easily allow additional VPP versions without manipulating or updating external dependencies. The guide about how to change local in order to support custom version can be found later in the document.
 
-**Note:** for full support of an interface/node names in VPPTop, the VPP version has to be **19.04.1** or newer. The release version of VPP 19.04 does not work properly, because of the [stats API versioning][stats-version-commit], which was added later after the release of VPP 19.04. If you want to use this version of the VPP, use the _stable/1904_ VPPTop branch where it was backported.  
+**Note:** for full support of an interface/node names in VPPTop, the VPP version has to be **19.04.4** or newer. The release version of VPP 19.04 does not work properly, because of the [stats API versioning][stats-version-commit], which was added later after the release of VPP 19.04. If you want to use this version of the VPP, use the _stable/1904_ VPPTop branch where it was backported.  
 
 ### Install VPP
 
-To install VPP from Packagecloud on Ubuntu 18.04, run following commands where you replace `<VERSION>` with either `1904`, `1908`, or `master` for the latest version:
+To install VPP from Packagecloud on Ubuntu 18.04, run following commands where you replace `<VERSION>` with either `1904`, `1908`, `2001` or `master` for the latest version:
 
 ```
 curl -s https://packagecloud.io/install/repositories/fdio/<VERSION>/script.deb.sh | sudo bash
@@ -110,7 +109,7 @@ As it was mentioned, VPPTop is tightly bound with the VPP version it tries to co
 The VPP-Agent usually supports multiple VPP versions. However, it may happen that the latest (or some specific) version is not compatible. In this case, VPPTop local may become helpful.
 
 **1. Install desired VPP version.** Related binary API files must be available in the filesystem.
-**2. Generate binary API.** The API is located in `/stats/local/binapi` directory. For VPPTop purposes, only following are needed: 
+**2. Generate binary API.** The API is located in `/stats/local/binapi` directory. For VPPTop purposes, following are needed: 
     * dhcp
     * interfaces
     * ip

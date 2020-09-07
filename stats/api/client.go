@@ -20,15 +20,17 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"git.fd.io/govpp.git/core"
 	"git.fd.io/govpp.git/proxy"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp"
 )
 
 // VppClient implements VPP-Agent client interface
 type VppClient struct {
-	vppConn   *core.Connection
-	statsConn govppapi.StatsProvider
-	client    *proxy.Client
-	vppInfo   VPPInfo
-	apiChan   govppapi.Channel
+	vppConn       *core.Connection
+	statsConn     govppapi.StatsProvider
+	client        *proxy.Client
+	vppInfo       VPPInfo
+	apiChan       govppapi.Channel
+	binapiVersion vpp.Version
 }
 
 // NewVppClient returns VPP client connected to the VPP via the shared memory
@@ -51,7 +53,6 @@ func (c VppClient) NewAPIChannel() (govppapi.Channel, error) {
 	if c.client != nil {
 		return c.client.NewBinapiClient()
 	}
-
 	return c.vppConn.NewAPIChannel()
 }
 
@@ -66,6 +67,10 @@ func (c *VppClient) CheckCompatiblity(msgs ...govppapi.Message) error {
 	return c.apiChan.CheckCompatiblity(msgs...)
 }
 
+func (c *VppClient) Stats() govppapi.StatsProvider {
+	return c.statsConn
+}
+
 func (c *VppClient) IsPluginLoaded(plugin string) bool {
 	for _, p := range c.vppInfo.Plugins {
 		if p.Name == plugin {
@@ -75,8 +80,16 @@ func (c *VppClient) IsPluginLoaded(plugin string) bool {
 	return false
 }
 
-func (c *VppClient) Stats() govppapi.StatsProvider {
-	return c.statsConn
+func (c *VppClient) BinapiVersion() vpp.Version {
+	return vpp.Version(c.vppInfo.Version)
+}
+
+func (c *VppClient) OnReconnect(_ func()) {
+	// no-op
+}
+
+func (c *VppClient) Connection() govppapi.Connection {
+	return c.vppConn
 }
 
 // SetInfo about the connected VPP

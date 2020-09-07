@@ -22,51 +22,47 @@ import (
 	"fmt"
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/PantheonTechnologies/vpptop/stats/api"
-	"github.com/ligato/cn-infra/logging/logrus"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi"
+	"go.ligato.io/cn-infra/v2/logging/logrus"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi"
 
-	govppcalls "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls"
-	telemetrycalls "go.ligato.io/vpp-agent/v2/plugins/telemetry/vppcalls"
-	ifplugincalls "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
+	govppcalls "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls"
+	telemetrycalls "go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls"
+	ifplugincalls "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"
 
-	vpe1904 "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/vpe"
-	vpe1908 "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/vpe"
-	vpe2001 "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/vpe"
-	vpe2001_324 "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324/vpe"
+	vpe1904 "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/vpe"
+	vpe1908 "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/vpe"
+	vpe2001 "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/vpe"
 
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001_324"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001"
 
 	// import for handler ifplugin handler registration
-	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls/vpp1904"
-	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls/vpp1908"
-	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls/vpp2001"
-	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls/vpp2001_324"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls/vpp1904"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls/vpp1908"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls/vpp2001"
 
 	// import for handler telemetry handler registration
-	_ "go.ligato.io/vpp-agent/v2/plugins/telemetry/vppcalls/vpp1904"
-	_ "go.ligato.io/vpp-agent/v2/plugins/telemetry/vppcalls/vpp1908"
-	_ "go.ligato.io/vpp-agent/v2/plugins/telemetry/vppcalls/vpp2001"
-	_ "go.ligato.io/vpp-agent/v2/plugins/telemetry/vppcalls/vpp2001_324"
+	_ "go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls/vpp1904"
+	_ "go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls/vpp1908"
+	_ "go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls/vpp2001"
 )
 
 // HandlerDef is a VPP handler definition. It is used to validate
 // compatibility with the version of the connected VPP
 type HandlerDef struct{}
 
-func (d *HandlerDef) IsHandlerCompatible(c *api.VppClient, isRemote bool) (api.HandlerAPI, bool, error) {
+func (d *HandlerDef) IsHandlerCompatible(c *api.VppClient, isRemote bool) (api.HandlerAPI, string, error) {
 	ch, err := c.NewAPIChannel()
 	if err != nil {
-		return nil, false, err
+		return nil, "", err
 	}
-	binapiVersion, err := vpp.FindCompatibleBinapi(ch)
+	binapiVersion, err := binapi.CompatibleVersion(ch)
 	if err == nil {
-		return NewVPPHandler(c, ch, string(binapiVersion), isRemote), true, nil
+		return NewVPPHandler(c, ch, string(binapiVersion), isRemote), string(binapiVersion), nil
 	}
-	return nil, false, nil
+	return nil, "", nil
 }
 
 // Handler uses Ligato VPP-Agent interface and telemetry low-level handlers
@@ -232,8 +228,6 @@ func (h *Handler) DumpThreads(_ context.Context) ([]api.ThreadData, error) {
 		return h.threads1908()
 	case vpp2001.Version:
 		return h.threads2001()
-	case vpp2001_324.Version:
-		return h.threads2001324()
 	default:
 		return nil, fmt.Errorf("unsuported vpp version %v", h.binapiVersion)
 	}
@@ -290,27 +284,6 @@ func (h *Handler) threads1908() ([]api.ThreadData, error) {
 func (h *Handler) threads2001() ([]api.ThreadData, error) {
 	req := &vpe2001.ShowThreads{}
 	reply := &vpe2001.ShowThreadsReply{}
-	if err := h.apiChan.SendRequest(req).ReceiveReply(reply); err != nil {
-		return nil, fmt.Errorf("request failed: %v", err)
-	}
-
-	result := make([]api.ThreadData, len(reply.ThreadData))
-	for i := range reply.ThreadData {
-		result[i].ID = reply.ThreadData[i].ID
-		result[i].Name = string(reply.ThreadData[i].Name)
-		result[i].Type = string(reply.ThreadData[i].Type)
-		result[i].PID = reply.ThreadData[i].PID
-		result[i].Core = reply.ThreadData[i].Core
-		result[i].CPUID = reply.ThreadData[i].CPUID
-		result[i].CPUSocket = reply.ThreadData[i].CPUSocket
-	}
-
-	return result, nil
-}
-
-func (h *Handler) threads2001324() ([]api.ThreadData, error) {
-	req := &vpe2001_324.ShowThreads{}
-	reply := &vpe2001_324.ShowThreadsReply{}
 	if err := h.apiChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return nil, fmt.Errorf("request failed: %v", err)
 	}
