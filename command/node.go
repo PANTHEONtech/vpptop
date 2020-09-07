@@ -27,8 +27,8 @@ import (
 	"git.fd.io/govpp.git/adapter/socketclient"
 	"git.fd.io/govpp.git/adapter/statsclient"
 	"git.fd.io/govpp.git/proxy"
-	"github.com/ligato/cn-infra/logging"
 	"github.com/spf13/cobra"
+	"go.ligato.io/cn-infra/v2/logging"
 )
 
 var nodeCmd = &cobra.Command{
