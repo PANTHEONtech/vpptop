@@ -59,7 +59,7 @@ type App struct {
 
 	// Cache for interface stats to
 	// be able to calculate bytes/s packets/s.
-	IfCache []api.Interface
+	ifCache []api.Interface
 
 	// sortBy carries information used at sorting stats
 	// for each tab.
@@ -146,12 +146,12 @@ func NewApp(lightTheme bool) (*App, error) {
 			// node tab.
 			views.NewTableView(
 				[]string{
-					"NodeName",
-					"NodeIndex",
-					"Clocks",
-					"Vectors",
+					"Name",
+					"State",
 					"Calls",
+					"Vectors",
 					"Suspends",
+					"Clocks",
 					"Vectors/Calls",
 				},
 				xtui.TableRows{{"Name", "State", "Calls", "Vectors", "Suspends", "Clocks", "Vectors/Calls"}},
@@ -277,7 +277,7 @@ func (app *App) Run() {
 				if err := app.vppProvider.ClearInterfaceCounters(ctx); err != nil {
 					log.Printf("error occured while clearing interface stats: %v\n", err)
 				}
-				app.IfCache = nil
+				app.ifCache = nil
 			case Nodes:
 				if err := app.vppProvider.ClearRuntimeCounters(ctx); err != nil {
 					log.Printf("error occured while clearing node stats: %v\n", err)
@@ -403,7 +403,7 @@ func (app *App) updateAll() {
 func (app *App) formatInterfaces(ifaces []api.Interface) xtui.TableRows {
 	nameToIdx := make(map[string]int)
 
-	for i, iface := range app.IfCache {
+	for i, iface := range app.ifCache {
 		nameToIdx[iface.InterfaceName] = i
 	}
 
@@ -429,11 +429,11 @@ func (app *App) formatInterfaces(ifaces []api.Interface) xtui.TableRows {
 
 		if idx, ok := nameToIdx[iface.InterfaceName]; ok {
 			// Calculate bytes/s, packets/s
-			rxbbs = iface.Rx.Bytes - app.IfCache[idx].Rx.Bytes
-			txbbs = iface.Tx.Bytes - app.IfCache[idx].Tx.Bytes
+			rxbbs = iface.Rx.Bytes - app.ifCache[idx].Rx.Bytes
+			txbbs = iface.Tx.Bytes - app.ifCache[idx].Tx.Bytes
 
-			rxpps = iface.Rx.Packets - app.IfCache[idx].Rx.Packets
-			txpps = iface.Tx.Packets - app.IfCache[idx].Tx.Packets
+			rxpps = iface.Rx.Packets - app.ifCache[idx].Rx.Packets
+			txpps = iface.Tx.Packets - app.ifCache[idx].Tx.Packets
 		}
 
 		rows[RowsPerIface*i+1] = []string{xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, "Packets/s", fmt.Sprint(rxpps), "Packets/s", fmt.Sprint(txpps), xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell}
@@ -460,7 +460,7 @@ func (app *App) formatInterfaces(ifaces []api.Interface) xtui.TableRows {
 		}
 	}
 
-	app.IfCache = ifaces
+	app.ifCache = ifaces
 
 	return rows
 }
