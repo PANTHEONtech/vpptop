@@ -232,6 +232,8 @@ func (app *App) Run() {
 	app.wg.Add(1)
 
 	go func() {
+		app.updateAll()
+
 		updateTicker := time.NewTicker(1 * time.Second).C
 
 		for {
@@ -241,59 +243,15 @@ func (app *App) Run() {
 
 				switch currTab() {
 				case Interfaces:
-					ifaces, err := app.vppProvider.GetInterfaces(ctx)
-					if err != nil {
-						log.Printf("error occured while polling interface stats: %v\n", err)
-					}
-
-					app.sortLock.Lock()
-					s := app.sortBy[Interfaces]
-					app.sortLock.Unlock()
-
-					app.sortInterfaceStats(ifaces, s.field, s.asc)
-					app.gui.ViewAtTab(Interfaces).Update(app.formatInterfaces(ifaces))
-
+					app.updateInterfaces(ctx)
 				case Nodes:
-					nodes, err := app.vppProvider.GetNodes(ctx)
-					if err != nil {
-						log.Printf("error occured while polling nodes stats: %v\n", err)
-					}
-
-					app.sortLock.Lock()
-					s := app.sortBy[Nodes]
-					app.sortLock.Unlock()
-
-					app.sortNodeStats(nodes, s.field, s.asc)
-					app.gui.ViewAtTab(Nodes).Update(app.formatNodes(nodes))
-
+					app.updateNodes(ctx)
 				case Errors:
-					errors, err := app.vppProvider.GetErrors(ctx)
-					if err != nil {
-						log.Printf("error occured while polling errors stats: %v\n", err)
-					}
-
-					app.sortLock.Lock()
-					s := app.sortBy[Errors]
-					app.sortLock.Unlock()
-
-					app.sortErrorStats(errors, s.field, s.asc)
-					app.gui.ViewAtTab(Errors).Update(app.formatErrors(errors))
-
+					app.updateErrors(ctx)
 				case Memory:
-					memstats, err := app.vppProvider.GetMemory(ctx)
-					if err != nil {
-						log.Printf("error occured while polling memory stats: %v\n", err)
-					}
-
-					app.gui.ViewAtTab(Memory).Update(app.formatMemstats(memstats))
-
+					app.updateMemory(ctx)
 				case Threads:
-					threads, err := app.vppProvider.GetThreads(ctx)
-					if err != nil {
-						log.Printf("error occured while polling threads stats: %v\n", err)
-					}
-
-					app.gui.ViewAtTab(Threads).Update(app.formatThreads(threads))
+					app.updateThreads(ctx)
 				}
 
 				app.vppLock.Unlock()
@@ -370,6 +328,75 @@ func (app *App) Run() {
 	})
 
 	app.gui.Start()
+}
+
+func (app *App) updateInterfaces(ctx context.Context) {
+	ifaces, err := app.vppProvider.GetInterfaces(ctx)
+	if err != nil {
+		log.Printf("error occured while polling interface stats: %v\n", err)
+	}
+
+	app.sortLock.Lock()
+	s := app.sortBy[Interfaces]
+	app.sortLock.Unlock()
+
+	app.sortInterfaceStats(ifaces, s.field, s.asc)
+	app.gui.ViewAtTab(Interfaces).Update(app.formatInterfaces(ifaces))
+}
+
+func (app *App) updateNodes(ctx context.Context) {
+	nodes, err := app.vppProvider.GetNodes(ctx)
+	if err != nil {
+		log.Printf("error occured while polling nodes stats: %v\n", err)
+	}
+
+	app.sortLock.Lock()
+	s := app.sortBy[Nodes]
+	app.sortLock.Unlock()
+
+	app.sortNodeStats(nodes, s.field, s.asc)
+	app.gui.ViewAtTab(Nodes).Update(app.formatNodes(nodes))
+}
+
+func (app *App) updateErrors(ctx context.Context) {
+	errors, err := app.vppProvider.GetErrors(ctx)
+	if err != nil {
+		log.Printf("error occured while polling errors stats: %v\n", err)
+	}
+
+	app.sortLock.Lock()
+	s := app.sortBy[Errors]
+	app.sortLock.Unlock()
+
+	app.sortErrorStats(errors, s.field, s.asc)
+	app.gui.ViewAtTab(Errors).Update(app.formatErrors(errors))
+}
+
+func (app *App) updateMemory(ctx context.Context) {
+	memStats, err := app.vppProvider.GetMemory(ctx)
+	if err != nil {
+		log.Printf("error occured while polling memory stats: %v\n", err)
+	}
+
+	app.gui.ViewAtTab(Memory).Update(app.formatMemstats(memStats))
+}
+
+func (app *App) updateThreads(ctx context.Context) {
+	threads, err := app.vppProvider.GetThreads(ctx)
+	if err != nil {
+		log.Printf("error occured while polling threads stats: %v\n", err)
+	}
+
+	app.gui.ViewAtTab(Threads).Update(app.formatThreads(threads))
+}
+
+func (app *App) updateAll() {
+	ctx := context.Background()
+	app.updateInterfaces(ctx)
+	app.updateNodes(ctx)
+	app.updateErrors(ctx)
+	app.updateMemory(ctx)
+	app.updateThreads(ctx)
 }
 
 // formatInterfaces formats interface stats to xtui.TableRows
