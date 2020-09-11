@@ -447,16 +447,14 @@ func (app *App) formatInterfaces(ifaces []api.Interface) xtui.TableRows {
 		rows[RowsPerIface*i+9] = []string{xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, "Miss", fmt.Sprint(iface.RxMiss), xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell}
 		rows[RowsPerIface*i+10] = []string{xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell, xtui.EmptyCell}
 
-		// start from the second row, the first is taken up
-		// by the interface name.
-		row := RowsPerIface*i + 1
-		ip := len(iface.IPAddresses)
-		maxRow := RowsPerIface*i + RowsPerIface // last row of each entry.
-
-		for ip > 0 && row < maxRow {
-			rows[row][0] = strings.Split(iface.IPAddresses[ip-1], "/")[0]
-			ip--
-			row++
+		// the first row is occupied by the interface name
+		availRows := RowsPerIface - 1
+		for j := 0; j < len(iface.IPAddresses); j++ {
+			if j >= availRows {
+				// no more space
+				break
+			}
+			rows[RowsPerIface*i+j+1][0] = iface.IPAddresses[j]
 		}
 	}
 
