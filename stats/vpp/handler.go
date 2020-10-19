@@ -128,9 +128,9 @@ func (h *Handler) DumpNodeCounters(ctx context.Context) (*api.NodeCounterInfo, e
 	}
 	for _, nodeCounter := range nodeCountersData.GetCounters() {
 		counters = append(counters, api.NodeCounter{
-			Value: nodeCounter.Value,
-			Name:  nodeCounter.Name,
-			Node:  nodeCounter.Node,
+			Count:  nodeCounter.Value,
+			Node:   nodeCounter.Node,
+			Reason: nodeCounter.Name,
 		})
 	}
 	return &api.NodeCounterInfo{

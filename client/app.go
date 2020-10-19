@@ -162,8 +162,8 @@ func NewApp(lightTheme bool) (*App, error) {
 			),
 			// errors tab.
 			views.NewTableView(
-				[]string{"Counter", "Node", "Reason"},
-				xtui.TableRows{{"Counter", "Node", "Reason"}},
+				[]string{"Counter", "Node", "Reason", "Severity"},
+				xtui.TableRows{{"Counter", "Node", "Reason", "Severity"}},
 				ErrorStatErrorNodeName,
 				1,
 				nil,
@@ -479,11 +479,15 @@ func (app *App) formatErrors(errors []api.Error) xtui.TableRows {
 	rows := make(xtui.TableRows, len(errors))
 
 	for i, errorC := range errors {
-		rows[i] = strings.Split(fmt.Sprintf("%d;%s;%s", errorC.Value, errorC.Node, errorC.Name), ";")
+		// Not supported in older versions
+		if errorC.Severity == "" {
+			errorC.Severity = "unknown"
+		}
+		rows[i] = strings.Split(fmt.Sprintf("%d;%s;%s;%s", errorC.Count, errorC.Node, errorC.Reason, errorC.Severity), ";")
 	}
 
 	if len(rows) == 0 {
-		rows = append(rows, []string{"", "", ""})
+		rows = append(rows, []string{"", "", "", ""})
 	}
 
 	return rows

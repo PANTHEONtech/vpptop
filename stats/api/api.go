@@ -151,9 +151,10 @@ type NodeCounterInfo struct {
 
 // NodeCounter (Error) is a single node counter entry type
 type NodeCounter struct {
-	Value uint64 `json:"value"`
-	Node  string `json:"node"`
-	Name  string `json:"name"`
+	Count    uint64 `json:"count"`
+	Node     string `json:"node"`
+	Reason   string `json:"reason"`
+	Severity string `json:"severity"`
 }
 
 // RuntimeInfo contains telemetry data about VPP runtime
