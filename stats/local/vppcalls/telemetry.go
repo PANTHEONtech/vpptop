@@ -61,7 +61,7 @@ var (
 	// 'show runtime' items
 	runtimeItemsRe = regexp.MustCompile(`([\w-:.]+)\s+(\w+(?:[ -]\w+)*)\s+(\d+)\s+(\d+)\s+(\d+)\s+([0-9.e-]+)\s+([0-9.e-]+)\s+`)
 	// 'show node counters'
-	nodeCountersRe = regexp.MustCompile(`^\s+(\d+)\s+([\w-/]+)\s+(.+)$`)
+	nodeCountersRe = regexp.MustCompile(`^\s+(\d+)\s+([\w-/]+)\s+(\w+(?:[ -]\w+)*)\s+(\w+)\s+$`)
 )
 
 func (h *TelemetryHandler) GetInterfaceStats(context.Context) (*govppapi.InterfaceStats, error) {
@@ -86,21 +86,22 @@ func (h *TelemetryHandler) GetNodeCounters(ctx context.Context) (*api.NodeCounte
 		}
 		if i == 0 {
 			fields := strings.Fields(line)
-			if len(fields) != 3 || fields[0] != "Count" {
+			if len(fields) != 4 || fields[0] != "Count" {
 				return nil, fmt.Errorf("invalid header for `show node counters` received: %q", line)
 			}
 			continue
 		}
 		matches := nodeCountersRe.FindStringSubmatch(line)
-		if len(matches)-1 != 3 {
+		if len(matches)-1 != 4 {
 			return nil, fmt.Errorf("`show node counters` parsing failed line: %q", line)
 		}
 		fields := matches[1:]
 
 		counters = append(counters, api.NodeCounter{
-			Value: uint64(strToFloat64(fields[0])),
-			Node:  fields[1],
-			Name:  fields[2],
+			Count:    uint64(strToFloat64(fields[0])),
+			Node:     fields[1],
+			Reason:   fields[2],
+			Severity: fields[3],
 		})
 	}
 	return &api.NodeCounterInfo{

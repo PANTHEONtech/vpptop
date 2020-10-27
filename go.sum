@@ -6,6 +6,8 @@ git.fd.io/govpp.git v0.3.6-0.20200904104942-0893e8cffa02 h1:z4NPzJGUaOV/cSoWpBPA
 git.fd.io/govpp.git v0.3.6-0.20200904104942-0893e8cffa02/go.mod h1:pCG9BwUtf+AwnHQWe3/Bk9URmfG0nRoM5DHA794z0/Y=
 git.fd.io/govpp.git v0.3.6-0.20200907101751-e3cea0cd4447 h1:w6r89O1U/FVwy5L3wey+whIrR/ezd/eRAMLzRiZVL88=
 git.fd.io/govpp.git v0.3.6-0.20200907101751-e3cea0cd4447/go.mod h1:pCG9BwUtf+AwnHQWe3/Bk9URmfG0nRoM5DHA794z0/Y=
+git.fd.io/govpp.git v0.3.6-0.20201015083021-9ea1f778fb14 h1:RJBmnvIzzzkbtcVdAdrue3M+p13QNiP5xYBeibhhsvw=
+git.fd.io/govpp.git v0.3.6-0.20201015083021-9ea1f778fb14/go.mod h1:OCVd4W8SH+666KRQoMj6PM+oipLDZAHhqMz9B1TGbgI=
 github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78 h1:w+iIsaOQNcT7OZ575w+acHgRric5iCyQh+xv+KJ4HB8=
 github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78/go.mod h1:LmzpDX56iTiv29bbRTIsUNlaFfuhWRQBWjQdVyAevI8=
 github.com/Azure/go-autorest v11.1.2+incompatible/go.mod h1:r+4oMnoxhatjLLJ6zxSWATqVooLgysK6ZNox3g/xq24=

@@ -68,6 +68,7 @@ const (
 	ErrorStatErrorCounter = iota
 	ErrorStatErrorNodeName
 	ErrorStatErrorReason
+	ErrorStatErrorSeverity
 )
 
 const (

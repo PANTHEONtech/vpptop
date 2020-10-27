@@ -3,7 +3,7 @@ module github.com/PantheonTechnologies/vpptop
 go 1.13
 
 require (
-	git.fd.io/govpp.git v0.3.6-0.20200907101751-e3cea0cd4447
+	git.fd.io/govpp.git v0.3.6-0.20201015083021-9ea1f778fb14
 	github.com/gizak/termui/v3 v3.1.0
 	github.com/imdario/mergo v0.3.8 // indirect
 	github.com/pkg/errors v0.9.1

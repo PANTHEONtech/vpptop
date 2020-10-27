@@ -306,9 +306,9 @@ func (app *App) sortErrorStats(errorStats []api.Error, field int, ascending bool
 	case ErrorStatErrorCounter:
 		sortFunc = func(i, j int) bool {
 			if ascending {
-				return errorStats[i].Value < errorStats[j].Value
+				return errorStats[i].Count < errorStats[j].Count
 			}
-			return errorStats[i].Value > errorStats[j].Value
+			return errorStats[i].Count > errorStats[j].Count
 		}
 	case ErrorStatErrorNodeName:
 		sortFunc = func(i, j int) bool {
@@ -320,9 +320,16 @@ func (app *App) sortErrorStats(errorStats []api.Error, field int, ascending bool
 	case ErrorStatErrorReason:
 		sortFunc = func(i, j int) bool {
 			if ascending {
-				return errorStats[i].Name < errorStats[j].Name
+				return errorStats[i].Reason < errorStats[j].Reason
 			}
-			return errorStats[i].Name > errorStats[j].Name
+			return errorStats[i].Reason > errorStats[j].Reason
+		}
+	case ErrorStatErrorSeverity:
+		sortFunc = func(i, j int) bool {
+			if ascending {
+				return errorStats[i].Severity < errorStats[j].Severity
+			}
+			return errorStats[i].Severity > errorStats[j].Severity
 		}
 	}
 	sort.Slice(errorStats, sortFunc)

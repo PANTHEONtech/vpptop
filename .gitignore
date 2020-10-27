@@ -5,6 +5,8 @@ cmd/vpptop/vpptop
 cmd/vpptop_local/vpptop_local
 
 # log files
+vpptop.log
+remote.log
 cmd/vpptop/vpptop.log
 cmd/vpptop/remote.log
 cmd/vpptop_local/vpptop.log

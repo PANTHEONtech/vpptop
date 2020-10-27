@@ -301,8 +301,8 @@ func (p *vppProvider) GetErrors(ctx context.Context) ([]api.Error, error) {
 	}
 	result := make([]api.Error, 0)
 	for _, counter := range nodeCounters.Counters {
-		counter.Value -= p.lastErrorCounters[counter.Node+counter.Name]
-		if counter.Value == 0 {
+		counter.Count -= p.lastErrorCounters[counter.Node+counter.Reason]
+		if counter.Count == 0 {
 			continue
 		}
 		result = append(result, counter)
@@ -371,9 +371,9 @@ func (p *vppProvider) updateLastErrors(ctx context.Context) {
 	}
 
 	for _, counter := range nodeCounters.Counters {
-		if counter.Value == 0 {
+		if counter.Count == 0 {
 			continue
 		}
-		p.lastErrorCounters[counter.Node+counter.Name] = counter.Value
+		p.lastErrorCounters[counter.Node+counter.Reason] = counter.Count
 	}
 }
