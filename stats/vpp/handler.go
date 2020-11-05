@@ -19,7 +19,6 @@ package vpp
 import (
 	"context"
 	"encoding/gob"
-	"fmt"
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/PantheonTechnologies/vpptop/stats/api"
 	"go.ligato.io/cn-infra/v2/logging/logrus"
@@ -30,23 +29,17 @@ import (
 	telemetrycalls "go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls"
 	ifplugincalls "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"
 
-	vpe1904 "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/vpe"
-	vpe1908 "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/vpe"
-	vpe2001 "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/vpe"
-
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904"
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908"
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001"
-
 	// import for handler ifplugin handler registration
-	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls/vpp1904"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls/vpp1908"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls/vpp2001"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls/vpp2005"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls/vpp2009"
 
 	// import for handler telemetry handler registration
-	_ "go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls/vpp1904"
 	_ "go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls/vpp1908"
 	_ "go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls/vpp2001"
+	_ "go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls/vpp2005"
+	_ "go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls/vpp2009"
 )
 
 // HandlerDef is a VPP handler definition. It is used to validate
@@ -220,84 +213,28 @@ func (h *Handler) DumpSession(ctx context.Context) (*api.SessionInfo, error) {
 	}, nil
 }
 
-func (h *Handler) DumpThreads(_ context.Context) ([]api.ThreadData, error) {
-	switch h.binapiVersion {
-	case vpp1904.Version:
-		return h.threads1904()
-	case vpp1908.Version:
-		return h.threads1908()
-	case vpp2001.Version:
-		return h.threads2001()
-	default:
-		return nil, fmt.Errorf("unsuported vpp version %v", h.binapiVersion)
+func (h *Handler) DumpThreads(ctx context.Context) ([]api.ThreadData, error) {
+	threads, err := h.telemetryVppCalls.GetThreads(ctx)
+	if err != nil {
+		return nil, err
 	}
+
+	result := make([]api.ThreadData, len(threads.GetItems()))
+	for i, thread := range threads.GetItems() {
+		result[i].ID = thread.ID
+		result[i].Name = thread.Name
+		result[i].Type = thread.Type
+		result[i].PID = thread.PID
+		result[i].Core = thread.Core
+		result[i].CPUID = thread.CPUID
+		result[i].CPUSocket = thread.CPUSocket
+	}
+
+	return result, nil
 }
 
 func (h *Handler) Close() {
 	if h.apiChan != nil {
 		h.apiChan.Close()
 	}
-}
-
-func (h *Handler) threads1904() ([]api.ThreadData, error) {
-	req := &vpe1904.ShowThreads{}
-	reply := &vpe1904.ShowThreadsReply{}
-	if err := h.apiChan.SendRequest(req).ReceiveReply(reply); err != nil {
-		return nil, fmt.Errorf("request failed: %v", err)
-	}
-
-	result := make([]api.ThreadData, len(reply.ThreadData))
-	for i := range reply.ThreadData {
-		result[i].ID = reply.ThreadData[i].ID
-		result[i].Name = string(reply.ThreadData[i].Name)
-		result[i].Type = string(reply.ThreadData[i].Type)
-		result[i].PID = reply.ThreadData[i].PID
-		result[i].Core = reply.ThreadData[i].Core
-		result[i].CPUID = reply.ThreadData[i].CPUID
-		result[i].CPUSocket = reply.ThreadData[i].CPUSocket
-	}
-
-	return result, nil
-}
-
-func (h *Handler) threads1908() ([]api.ThreadData, error) {
-	req := &vpe1908.ShowThreads{}
-	reply := &vpe1908.ShowThreadsReply{}
-	if err := h.apiChan.SendRequest(req).ReceiveReply(reply); err != nil {
-		return nil, fmt.Errorf("request failed: %v", err)
-	}
-
-	result := make([]api.ThreadData, len(reply.ThreadData))
-	for i := range reply.ThreadData {
-		result[i].ID = reply.ThreadData[i].ID
-		result[i].Name = string(reply.ThreadData[i].Name)
-		result[i].Type = string(reply.ThreadData[i].Type)
-		result[i].PID = reply.ThreadData[i].PID
-		result[i].Core = reply.ThreadData[i].Core
-		result[i].CPUID = reply.ThreadData[i].CPUID
-		result[i].CPUSocket = reply.ThreadData[i].CPUSocket
-	}
-
-	return result, nil
-}
-
-func (h *Handler) threads2001() ([]api.ThreadData, error) {
-	req := &vpe2001.ShowThreads{}
-	reply := &vpe2001.ShowThreadsReply{}
-	if err := h.apiChan.SendRequest(req).ReceiveReply(reply); err != nil {
-		return nil, fmt.Errorf("request failed: %v", err)
-	}
-
-	result := make([]api.ThreadData, len(reply.ThreadData))
-	for i := range reply.ThreadData {
-		result[i].ID = reply.ThreadData[i].ID
-		result[i].Name = string(reply.ThreadData[i].Name)
-		result[i].Type = string(reply.ThreadData[i].Type)
-		result[i].PID = reply.ThreadData[i].PID
-		result[i].Core = reply.ThreadData[i].Core
-		result[i].CPUID = reply.ThreadData[i].CPUID
-		result[i].CPUSocket = reply.ThreadData[i].CPUSocket
-	}
-
-	return result, nil
 }

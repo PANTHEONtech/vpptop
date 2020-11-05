@@ -34,6 +34,7 @@ type TelemetryVppAPI interface {
 	GetInterfaceStats(context.Context) (*govppapi.InterfaceStats, error)
 	GetNodeCounters(context.Context) (*api.NodeCounterInfo, error)
 	GetRuntimeInfo(context.Context) (*api.RuntimeInfo, error)
+	GetThreads(context.Context) ([]api.ThreadData, error)
 }
 
 // TelemetryHandler implements TelemetryVppAPI
@@ -161,6 +162,26 @@ func (h *TelemetryHandler) GetRuntimeInfo(ctx context.Context) (*api.RuntimeInfo
 	return &api.RuntimeInfo{
 		Threads: threads,
 	}, nil
+}
+
+func (h *TelemetryHandler) GetThreads(ctx context.Context) ([]api.ThreadData, error) {
+	threads, err := h.vpeRpc.ShowThreads(ctx, new(vpe.ShowThreads))
+	if err != nil {
+		return nil, fmt.Errorf("show threads error: %v", err)
+	}
+
+	result := make([]api.ThreadData, len(threads.ThreadData))
+	for i := range threads.ThreadData {
+		result[i].ID = threads.ThreadData[i].ID
+		result[i].Name = threads.ThreadData[i].Name
+		result[i].Type = threads.ThreadData[i].Type
+		result[i].PID = threads.ThreadData[i].PID
+		result[i].Core = threads.ThreadData[i].Core
+		result[i].CPUID = threads.ThreadData[i].CPUID
+		result[i].CPUSocket = threads.ThreadData[i].CPUSocket
+	}
+
+	return result, nil
 }
 
 func strToFloat64(s string) float64 {

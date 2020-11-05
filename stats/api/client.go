@@ -17,6 +17,7 @@
 package api
 
 import (
+	"context"
 	govppapi "git.fd.io/govpp.git/api"
 	"git.fd.io/govpp.git/core"
 	"git.fd.io/govpp.git/proxy"
@@ -25,12 +26,11 @@ import (
 
 // VppClient implements VPP-Agent client interface
 type VppClient struct {
-	vppConn       *core.Connection
-	statsConn     govppapi.StatsProvider
-	client        *proxy.Client
-	vppInfo       VPPInfo
-	apiChan       govppapi.Channel
-	binapiVersion vpp.Version
+	vppConn   *core.Connection
+	statsConn govppapi.StatsProvider
+	client    *proxy.Client
+	vppInfo   VPPInfo
+	apiChan   govppapi.Channel
 }
 
 // NewVppClient returns VPP client connected to the VPP via the shared memory
@@ -65,6 +65,14 @@ func (c *VppClient) CheckCompatiblity(msgs ...govppapi.Message) error {
 		c.apiChan = ch
 	}
 	return c.apiChan.CheckCompatiblity(msgs...)
+}
+
+func (c VppClient) NewStream(ctx context.Context, options ...govppapi.StreamOption) (govppapi.Stream, error) {
+	return c.vppConn.NewStream(ctx, options...)
+}
+
+func (c VppClient) Invoke(ctx context.Context, req govppapi.Message, reply govppapi.Message) error {
+	return c.vppConn.Invoke(ctx, req, reply)
 }
 
 func (c *VppClient) Stats() govppapi.StatsProvider {

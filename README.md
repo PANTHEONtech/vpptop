@@ -27,13 +27,14 @@ VPPTop currently supports following metrics:
 
 ## Requirements
 
-VPPTop requires [Go][go-download] **1.11** (or later) to install and run. Supported [VPP][wiki-vpp] versions are as follows:
-- **19.04.4**
+VPPTop requires [Go][go-download] **1.11** (or later) to install and run. [VPP][wiki-vpp] versions supported through the VPP-Agent are as follows:
 - **19.08.1**
 - **20.01**
+- **20.05**
+- **20.09**
 
-Supported by the local:
-- **20.09-rc0~389**
+VPP version supported by the local implementation:
+- **v21.01-rc0~282**
 
 All versions except the local one are enabled via Ligato [vpp-agent][vpp-agent] (current version is v3.1.0). The local version implementation resides directly in the VPPTop. The meaning of the local VPP support is to easily allow additional VPP versions without manipulating or updating external dependencies. The guide about how to change local in order to support custom version can be found later in the document.
 
@@ -84,9 +85,7 @@ make build
 make install
 ```
 
-The command builds two binaries:
-* **vpptop** supports all VPP versions mentioned above.
-* **vpptop_local** supports the local version only.
+The command builds a single VPPTop binary supporting both, VPP-Agent-based VPP versions mentioned above, and the local VPP version:
 
 VPPTop also supports a light terminal theme. To use darker colors which have better visibility on light background set `VPPTOP_THEME_LIGHT` environment variable.
 
