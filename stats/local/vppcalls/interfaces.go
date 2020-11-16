@@ -20,8 +20,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/PantheonTechnologies/vpptop/stats/local/binapi/interface_types"
-	"github.com/PantheonTechnologies/vpptop/stats/local/binapi/ip_types"
 	"net"
 	"strings"
 
@@ -29,7 +27,9 @@ import (
 	"github.com/PantheonTechnologies/vpptop/stats/api"
 	dhcpapi "github.com/PantheonTechnologies/vpptop/stats/local/binapi/dhcp"
 	interfaces "github.com/PantheonTechnologies/vpptop/stats/local/binapi/interface"
+	"github.com/PantheonTechnologies/vpptop/stats/local/binapi/interface_types"
 	"github.com/PantheonTechnologies/vpptop/stats/local/binapi/ip"
+	"github.com/PantheonTechnologies/vpptop/stats/local/binapi/ip_types"
 )
 
 // InterfaceVppAPI defines interface-specific methods

@@ -36,15 +36,13 @@ type VppCoreAPI interface {
 
 // VppCoreHandler implements VppCoreAPI
 type VppCoreHandler struct {
-	ch     govppapi.Channel
 	vpeRpc vpe.RPCService
 }
 
 // NewVppCoreHandler returns a new instance of the VppCoreAPI
-func NewVppCoreHandler(conn govppapi.Connection, ch govppapi.Channel) VppCoreAPI {
+func NewVppCoreHandler(conn govppapi.Connection) VppCoreAPI {
 	h := &VppCoreHandler{
 		vpeRpc: vpe.NewServiceClient(conn),
-		ch:     ch,
 	}
 	return h
 }

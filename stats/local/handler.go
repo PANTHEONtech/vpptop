@@ -19,7 +19,6 @@ package local
 import (
 	"context"
 	"encoding/gob"
-	"fmt"
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/PantheonTechnologies/vpptop/stats/api"
 	"github.com/PantheonTechnologies/vpptop/stats/local/binapi/dhcp"
@@ -74,7 +73,7 @@ func NewLocalHandler(c *api.VppClient, ch govppapi.Channel, isRemote bool) *Hand
 		}
 	}
 	return &Handler{
-		vppCoreCalls:      vppcalls.NewVppCoreHandler(c.Connection(), ch),
+		vppCoreCalls:      vppcalls.NewVppCoreHandler(c.Connection()),
 		interfaceVppCalls: vppcalls.NewInterfaceHandler(ch),
 		telemetryVppCalls: vppcalls.NewTelemetryHandler(c.Connection(), c.Stats()),
 		apiChan:           ch,
@@ -112,25 +111,8 @@ func (h *Handler) DumpVersion(ctx context.Context) (*api.VersionInfo, error) {
 func (h *Handler) DumpSession(ctx context.Context) (*api.SessionInfo, error) {
 	return h.vppCoreCalls.GetSession(ctx)
 }
-func (h *Handler) DumpThreads(_ context.Context) ([]api.ThreadData, error) {
-	req := &vpe.ShowThreads{}
-	reply := &vpe.ShowThreadsReply{}
-	if err := h.apiChan.SendRequest(req).ReceiveReply(reply); err != nil {
-		return nil, fmt.Errorf("request failed: %v", err)
-	}
-
-	result := make([]api.ThreadData, len(reply.ThreadData))
-	for i := range reply.ThreadData {
-		result[i].ID = reply.ThreadData[i].ID
-		result[i].Name = reply.ThreadData[i].Name
-		result[i].Type = reply.ThreadData[i].Type
-		result[i].PID = reply.ThreadData[i].PID
-		result[i].Core = reply.ThreadData[i].Core
-		result[i].CPUID = reply.ThreadData[i].CPUID
-		result[i].CPUSocket = reply.ThreadData[i].CPUSocket
-	}
-
-	return result, nil
+func (h *Handler) DumpThreads(ctx context.Context) ([]api.ThreadData, error) {
+	return h.telemetryVppCalls.GetThreads(ctx)
 }
 
 func (h *Handler) Close() {
