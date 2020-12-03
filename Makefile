@@ -1,8 +1,8 @@
-PROJECT    := VPPTop
-VERSION	   ?= $(shell git describe --tags)
-COMMIT     ?= $(shell git rev-parse HEAD)
-BUILD_DATE ?= $(shell date +%s)
-VPP_API_DIR=${VPP_API_DIR:-/usr/share/vpp/api}
+PROJECT	:= VPPTop
+VERSION	?= $(shell git describe --tags)
+COMMIT	?= $(shell git rev-parse HEAD)
+BUILD_DATE	?= $(shell date +%s)
+VPP_API_DIR	?= /usr/share/vpp/api
 
 LDFLAGS = -w -s \
 	-X $(GOPKG)/pkg/version.app=$(PROJECT) \
@@ -19,5 +19,5 @@ install: ## Install VPPTop binaries
 	cd cmd/vpptop && go install -ldflags "${LDFLAGS}"
 
 generate-binapi:
-	@echo "# generating binapi"
-	cd stats/local/binapi && go generate -x
+	@echo "# generating binapi using input from ${VPP_API_DIR}"
+	@./scripts/binapigen.sh ${VPP_API_DIR}
