@@ -37,8 +37,8 @@ const (
 	def
 )
 
-// TermWindow represents terminal gui that can handle up to multiple tabs
-// with different content.
+// TermWindow represents terminal gui handling multiple tabs
+// with different data.
 type TermWindow struct {
 	// current state.
 	view viewType
@@ -66,8 +66,8 @@ type TermWindow struct {
 	notificationTimer *time.Timer
 
 	// channels & callbacks.
-	stop chan struct{}
-
+	stop         chan struct{}
+	onDataUpdate <-chan struct{}
 	windowEvents <-chan tui.Event
 	refresh      <-chan time.Time
 
@@ -80,12 +80,12 @@ type TermWindow struct {
 // NewTermWindow returns an instance of <*TermWindow>
 // you can also set the theme of gui (however the gui cannot change the supplied views
 // so it's up to the user to set the color of each view).
-func NewTermWindow(refreshInterval time.Duration, views []TabView, viewNames []string, clearTabs []int, exitView TabView) *TermWindow {
+func NewTermWindow(onDataUpdate <-chan struct{}, views []TabView, viewNames []string, clearTabs []int, exitView TabView) *TermWindow {
 	window := new(TermWindow)
 
-	window.refresh = time.NewTicker(refreshInterval).C
 	window.windowEvents = tui.PollEvents()
 	window.stop = make(chan struct{})
+	window.onDataUpdate = onDataUpdate
 
 	window.timerDuration = 1 * time.Second
 	window.notificationTimer = time.NewTimer(window.timerDuration)
@@ -384,7 +384,7 @@ func (w *TermWindow) Start() {
 	w.resize(tui.TerminalDimensions())
 	for {
 		select {
-		case <-w.refresh:
+		case <-w.onDataUpdate:
 			w.render()
 		case e := <-w.windowEvents:
 			switch e.Type {
@@ -394,8 +394,10 @@ func (w *TermWindow) Start() {
 				payload := e.Payload.(tui.Resize)
 				w.resize(payload.Width, payload.Height)
 			}
+			w.render()
 		case <-w.notificationTimer.C:
 			w.notification.Text = ""
+			w.render()
 		case <-w.stop:
 			return
 		}

@@ -71,6 +71,9 @@ type App struct {
 	// current gui tab.
 	currTab int
 
+	// gui notifications about the content change
+	onDataUpdate chan struct{}
+
 	// go routine management.
 	wg       *sync.WaitGroup
 	sortLock *sync.Mutex
@@ -95,6 +98,7 @@ func NewApp(lightTheme bool) (*App, error) {
 		asc   bool
 		field int
 	}, 5)
+	app.onDataUpdate = make(chan struct{})
 
 	for i := range app.sortBy {
 		app.sortBy[i].field = NoColumn
@@ -102,7 +106,7 @@ func NewApp(lightTheme bool) (*App, error) {
 	}
 
 	app.gui = gui.NewTermWindow(
-		16*time.Millisecond,
+		app.onDataUpdate,
 		[]gui.TabView{
 			// interface tab.
 			views.NewTableView(
@@ -256,6 +260,7 @@ func (app *App) Run() {
 
 				app.vppLock.Unlock()
 
+				app.onDataUpdate <- struct{}{}
 			case <-ctx.Done():
 				app.wg.Done()
 				return
