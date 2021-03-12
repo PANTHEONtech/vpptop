@@ -56,7 +56,7 @@ type TermWindow struct {
 	tabPane      *widgets.TabPane
 	filter       *widgets.Paragraph
 	filterExit   *widgets.Paragraph
-	version      *widgets.Paragraph
+	state        *widgets.Paragraph
 	notification *widgets.Paragraph
 
 	// keybidings
@@ -69,7 +69,6 @@ type TermWindow struct {
 	stop         chan struct{}
 	onDataUpdate <-chan struct{}
 	windowEvents <-chan tui.Event
-	refresh      <-chan time.Time
 
 	onExit      func(Event)
 	onSort      func(Event)
@@ -125,10 +124,10 @@ func NewTermWindow(onDataUpdate <-chan struct{}, views []TabView, viewNames []st
 	window.filterExit.Text = fmt.Sprintf("Exit:%v filter:", KeyCancel)
 	window.filterExit.TextStyle = tui.NewStyle(textStyle, filterBackground, tui.ModifierBold)
 
-	window.version = widgets.NewParagraph()
-	window.version.SetRect(VersionTopX, VersionTopY, VersionBottomX, VersionBottomY)
-	window.version.Border = false
-	window.version.WrapText = true
+	window.state = widgets.NewParagraph()
+	window.state.SetRect(VersionTopX, VersionTopY, VersionBottomX, VersionBottomY)
+	window.state.Border = false
+	window.state.WrapText = true
 
 	window.notification = widgets.NewParagraph()
 	window.notification.Border = false
@@ -164,9 +163,10 @@ func (w *TermWindow) AddOnTabSwitchCallback(f func(Event)) {
 	w.onTabswitch = f
 }
 
-// SetVersion sets the text to the version paragraph.
-func (w *TermWindow) SetVersion(s string) {
-	w.version.Text = s
+// SetState sets the connection state, version and build date text to the state
+// paragraph.
+func (w *TermWindow) SetState(s string) {
+	w.state.Text = s
 }
 
 // handleExit changes the main view to the exit screen, and notifies
@@ -337,7 +337,7 @@ func (w *TermWindow) processInput(key string) {
 func (w *TermWindow) render() {
 	widgts := []tui.Drawable{
 		w.tabPane,
-		w.version,
+		w.state,
 		w.notification,
 	}
 

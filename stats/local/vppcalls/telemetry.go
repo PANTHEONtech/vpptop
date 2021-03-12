@@ -39,9 +39,8 @@ type TelemetryVppAPI interface {
 
 // TelemetryHandler implements TelemetryVppAPI
 type TelemetryHandler struct {
-	sp      govppapi.StatsProvider
-	ifStats govppapi.InterfaceStats
-	vpeRpc  vpe.RPCService
+	sp     govppapi.StatsProvider
+	vpeRpc vpe.RPCService
 }
 
 // NewTelemetryHandler returns a new instance of the TelemetryVppAPI
@@ -62,15 +61,17 @@ var (
 	// 'show runtime' items
 	runtimeItemsRe = regexp.MustCompile(`([\w-:.]+)\s+(\w+(?:[ -]\w+)*)\s+(\d+)\s+(\d+)\s+(\d+)\s+([0-9.e-]+)\s+([0-9.e-]+)\s+`)
 	// 'show node counters'
-	nodeCountersRe = regexp.MustCompile(`^\s+(\d+)\s+([\w-/]+)\s+(\w+(?:[ -]\w+)*)\s+(\w+)\s+$`)
+	nodeCountersRe    = regexp.MustCompile(`^\s+(\d+)\s+([\w-/]+)\s+(\w+(?:[ -]\w+)*)\s+(\w+)\s+$`)
+	nodeCountersReOld = regexp.MustCompile(`^\s+(\d+)\s+([\w-/]+)\s+(.+)$`)
 )
 
 func (h *TelemetryHandler) GetInterfaceStats(context.Context) (*govppapi.InterfaceStats, error) {
-	err := h.sp.GetInterfaceStats(&h.ifStats)
+	ifStats := &govppapi.InterfaceStats{}
+	err := h.sp.GetInterfaceStats(ifStats)
 	if err != nil {
 		return nil, err
 	}
-	return &h.ifStats, nil
+	return ifStats, nil
 }
 
 func (h *TelemetryHandler) GetNodeCounters(ctx context.Context) (*api.NodeCounterInfo, error) {
@@ -87,23 +88,32 @@ func (h *TelemetryHandler) GetNodeCounters(ctx context.Context) (*api.NodeCounte
 		}
 		if i == 0 {
 			fields := strings.Fields(line)
-			if len(fields) != 4 || fields[0] != "Count" {
-				return nil, fmt.Errorf("invalid header for `show node counters` received: %q", line)
+			if (len(fields) == 3 || len(fields) == 4) && fields[0] == "Count" {
+				continue
 			}
-			continue
+			return nil, fmt.Errorf("invalid header for `show node counters` received: %q", line)
 		}
-		matches := nodeCountersRe.FindStringSubmatch(line)
-		if len(matches)-1 != 4 {
+		if matches := nodeCountersRe.FindStringSubmatch(line); len(matches)-1 == 4 {
+			fields := matches[1:]
+			counters = append(counters, api.NodeCounter{
+				Count:    uint64(strToFloat64(fields[0])),
+				Node:     fields[1],
+				Reason:   fields[2],
+				Severity: fields[3],
+			})
+		} else if matches := nodeCountersReOld.FindStringSubmatch(line); len(matches)-1 == 3 {
+			// fallback to older version
+			fields := matches[1:]
+
+			counters = append(counters, api.NodeCounter{
+				Count:    uint64(strToFloat64(fields[0])),
+				Node:     fields[1],
+				Reason:   fields[2],
+				Severity: "unknown",
+			})
+		} else {
 			return nil, fmt.Errorf("`show node counters` parsing failed line: %q", line)
 		}
-		fields := matches[1:]
-
-		counters = append(counters, api.NodeCounter{
-			Count:    uint64(strToFloat64(fields[0])),
-			Node:     fields[1],
-			Reason:   fields[2],
-			Severity: fields[3],
-		})
 	}
 	return &api.NodeCounterInfo{
 		Counters: counters,

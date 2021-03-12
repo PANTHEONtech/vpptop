@@ -29,7 +29,7 @@ import (
 )
 
 // GetVersion of the local VPP implementation
-const VPPVersion = "20.09-rc0"
+const VPPVersion = "21.01-rc2~2"
 
 var localMsgs []govppapi.Message
 
