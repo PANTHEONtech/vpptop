@@ -20,9 +20,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"git.fd.io/govpp.git"
@@ -32,6 +34,7 @@ import (
 	"git.fd.io/govpp.git/core"
 	"git.fd.io/govpp.git/proxy"
 	"github.com/PantheonTechnologies/vpptop/stats/api"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -46,36 +49,105 @@ type vppProvider struct {
 	vppClient   *api.VppClient
 	statsClient adapter.StatsAPI
 
+	// provider log output
+	out io.Writer
+
 	// list of available VPP handler definitions
 	handlerDefs []api.HandlerDef
+
+	// current VPP API and stats connection states
+	vppConnectionState   int32
+	statsConnectionState int32
+
 	// interface to the chosen VPP handler
 	handler api.HandlerAPI
 
 	vppVersion        *api.VersionInfo
 	lastErrorCounters map[string]uint64
+
+	// cancel connection changes watcher
+	cancel context.CancelFunc
 }
 
 // NewVppProvider constructs new VppProviderAPI object with available
 // VPP version definitions
-func NewVppProvider(defs []api.HandlerDef) api.VppProviderAPI {
-	return &vppProvider{handlerDefs: defs}
+func NewVppProvider(defs []api.HandlerDef, logFile io.Writer) api.VppProviderAPI {
+	return &vppProvider{
+		handlerDefs: defs,
+		out:         logFile,
+	}
 }
 
 // Connect establishes a VPP connection using GoVPP API
 func (p *vppProvider) Connect(soc string) error {
 	p.lastErrorCounters = make(map[string]uint64)
 
-	p.statsClient = statsclient.NewStatsClient(soc)
-	statsConn, err := core.ConnectStats(p.statsClient)
-	if err != nil {
-		return fmt.Errorf("connection to stats api failed: %v", err)
-	}
+	// redirect GoVPP loggers to the log file
+	core.SetLogger(&logrus.Logger{Out: p.out})
+	statsclient.Log.Out = p.out
 
-	vppConn, err := govpp.Connect("")
+	// very high number of attempts
+	retryAttempts := int(^uint(0) >> 1)
+
+	// connect to the VPP and wait for reply
+	vppConn, vppConnEv, err := govpp.AsyncConnect("", retryAttempts, core.DefaultReconnectInterval)
 	if err != nil {
 		return fmt.Errorf("connection to govpp failed: %v", err)
 	}
+	select {
+	case e := <-vppConnEv:
+		if e.State == core.Connected {
+			// OK
+		} else {
+			log.Fatalf("Error: unexpected VPP state: %s\n", e.State.String())
+		}
+	}
 
+	// connect to the VPP stats and wait for reply
+	statsClient := statsclient.NewStatsClient(soc)
+	statsConn, statsConnEv, err := core.AsyncConnectStats(statsClient, retryAttempts, core.DefaultReconnectInterval)
+	if err != nil {
+		return fmt.Errorf("connection to stats api failed: %v", err)
+	}
+	select {
+	case e := <-statsConnEv:
+		if e.State == core.Connected {
+			// OK
+		} else {
+			log.Fatalf("Error: unexpected VPP state: %s\n", e.State.String())
+		}
+	}
+
+	if err := p.initConnection(vppConn, statsConn); err != nil {
+		log.Fatalln("Error connecting to the vpp")
+	}
+
+	// watch connection changes
+	var ctx context.Context
+	ctx, p.cancel = context.WithCancel(context.Background())
+	go func() {
+		for {
+			select {
+			case e := <-vppConnEv:
+				lastState := atomic.LoadInt32(&p.vppConnectionState)
+				if atomic.CompareAndSwapInt32(&p.vppConnectionState, lastState, int32(e.State)) {
+					log.Printf("VPP API connection state was changed to %s", e.State)
+				}
+			case e := <-statsConnEv:
+				lastState := atomic.LoadInt32(&p.statsConnectionState)
+				if atomic.CompareAndSwapInt32(&p.statsConnectionState, lastState, int32(e.State)) {
+					log.Printf("VPP stats connection state was changed to %s", e.State)
+				}
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+
+	return nil
+}
+
+func (p *vppProvider) initConnection(vppConn *core.Connection, statsConn *core.StatsConnection) (err error) {
 	p.vppClient = api.NewVppClient(vppConn, statsConn)
 
 	var (
@@ -198,6 +270,7 @@ func (p *vppProvider) ConnectRemote(rAddr string) error {
 
 // Disconnect should be called after Connect, if the connection is no longer needed.
 func (p *vppProvider) Disconnect() {
+	p.cancel()
 	p.handler.Close()
 	if p.vppClient != nil {
 		p.vppClient.Disconnect()
@@ -211,9 +284,22 @@ func (p *vppProvider) Disconnect() {
 	}
 }
 
-// GetVersion returns the current vpp version.
-func (p *vppProvider) GetVersion() string {
-	return "VPP version: " + p.vppVersion.Version + "\n" + p.vppVersion.BuildDate
+func (p *vppProvider) GetState() (core.ConnectionState, string) {
+	vppConn := atomic.LoadInt32(&p.vppConnectionState)
+	statsConn := atomic.LoadInt32(&p.statsConnectionState)
+
+	if vppConn == int32(core.Failed) || statsConn == int32(core.Failed) {
+		return core.Failed, "[\u25CF](fg:red) Connection failed\nVPP version: -"
+	}
+	if vppConn == int32(core.Disconnected) || statsConn == int32(core.Disconnected) {
+		return core.Disconnected, "[\u25CF](fg:red) Disconnected\nVPP version: -"
+	}
+	if vppConn == int32(core.NotResponding) || statsConn == int32(core.NotResponding) {
+		return core.NotResponding, "[\u25CF](fg:yellow) Not responding\nVPP version: " + p.vppVersion.Version + "\n" +
+			p.vppVersion.BuildDate
+	}
+	return core.Connected, "[\u25CF](fg:green) Connected\nVPP version: " + p.vppVersion.Version + "\n" +
+		p.vppVersion.BuildDate
 }
 
 // GetNodes returns per node statistics.

@@ -33,18 +33,18 @@ import (
 
 // startClient is a blocking call that starts
 // the terminal frontend for displaying VPP metrics.
-func startClient(socket, raddr string, file io.Writer) error {
+func startClient(socket, rAddr string, logFile io.Writer) error {
 	var lightTheme bool
 	if _, lightTheme = os.LookupEnv("VPPTOP_THEME_LIGHT"); lightTheme {
 		gui.SetLightTheme()
 	}
 
-	log.SetOutput(file)
-	app, err := client.NewApp(lightTheme)
+	log.SetOutput(logFile)
+	app, err := client.NewApp(lightTheme, logFile)
 	if err != nil {
 		return fmt.Errorf("error occurred during client init: %v", err)
 	}
-	if err = app.Init(socket, raddr); err != nil {
+	if err = app.Init(socket, rAddr); err != nil {
 		return fmt.Errorf("error occurred during client init: %v", err)
 	}
 

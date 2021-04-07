@@ -19,11 +19,13 @@ package client
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"strings"
 	"sync"
 	"time"
 
+	"git.fd.io/govpp.git/core"
 	"github.com/PantheonTechnologies/vpptop/gui"
 	"github.com/PantheonTechnologies/vpptop/gui/views"
 	"github.com/PantheonTechnologies/vpptop/gui/xtui"
@@ -82,7 +84,7 @@ type App struct {
 	cancel   context.CancelFunc
 }
 
-func NewApp(lightTheme bool) (*App, error) {
+func NewApp(lightTheme bool, logFile io.Writer) (*App, error) {
 	app := new(App)
 
 	app.sortLock = new(sync.Mutex)
@@ -92,7 +94,7 @@ func NewApp(lightTheme bool) (*App, error) {
 	if len(Defs) == 0 {
 		return nil, fmt.Errorf("no VPP handler definition was provided")
 	}
-	app.vppProvider = stats.NewVppProvider(Defs)
+	app.vppProvider = stats.NewVppProvider(Defs, logFile)
 	app.wg = new(sync.WaitGroup)
 	app.sortBy = make([]struct {
 		asc   bool
@@ -216,8 +218,8 @@ func (app *App) Init(soc, rAddr string) error {
 	if err := app.gui.Init(); err != nil {
 		return err
 	}
-
-	app.gui.SetVersion(app.vppProvider.GetVersion())
+	_, state := app.vppProvider.GetState()
+	app.gui.SetState(state)
 
 	return nil
 }
@@ -239,28 +241,42 @@ func (app *App) Run() {
 		app.updateAll()
 
 		updateTicker := time.NewTicker(1 * time.Second).C
+		var lastState core.ConnectionState
 
 		for {
 			select {
 			case <-updateTicker:
-				app.vppLock.Lock()
-
-				switch currTab() {
-				case Interfaces:
-					app.updateInterfaces(ctx)
-				case Nodes:
-					app.updateNodes(ctx)
-				case Errors:
-					app.updateErrors(ctx)
-				case Memory:
-					app.updateMemory(ctx)
-				case Threads:
-					app.updateThreads(ctx)
+				updateGui := false
+				currState, strState := app.vppProvider.GetState()
+				if currState == core.Connected {
+					// reset cache when returned to the connected state
+					if lastState != currState {
+						app.ifCache = nil
+					}
+					app.vppLock.Lock()
+					switch currTab() {
+					case Interfaces:
+						app.updateInterfaces(ctx)
+					case Nodes:
+						app.updateNodes(ctx)
+					case Errors:
+						app.updateErrors(ctx)
+					case Memory:
+						app.updateMemory(ctx)
+					case Threads:
+						app.updateThreads(ctx)
+					}
+					app.vppLock.Unlock()
+					updateGui = true
 				}
-
-				app.vppLock.Unlock()
-
-				app.onDataUpdate <- struct{}{}
+				if lastState != currState {
+					lastState = currState
+					app.gui.SetState(strState)
+					updateGui = true
+				}
+				if updateGui {
+					app.onDataUpdate <- struct{}{}
+				}
 			case <-ctx.Done():
 				app.wg.Done()
 				return

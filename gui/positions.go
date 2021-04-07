@@ -21,25 +21,25 @@ const (
 	TabPaneTopX    = 0
 	TabPaneTopY    = 0
 	TabPaneBottomX = 50
-	TabPaneBottomY = 4
+	TabPaneBottomY = 5
 
 	VersionTopX    = 50
 	VersionTopY    = 0
 	VersionBottomX = 110
-	VersionBottomY = 4
+	VersionBottomY = 5
 
 	FilterTopX    = 24
-	FilterTopY    = 3
+	FilterTopY    = 4
 	FilterBottomX = 200
-	FilterBottomY = 6
+	FilterBottomY = 7
 
 	FilterExitTopX    = 0
-	FilterExitTopY    = 3
+	FilterExitTopY    = 4
 	FilterExitBottomX = 24
-	FilterExitBottomY = 6
+	FilterExitBottomY = 7
 
 	SortPanelTopX    = 0
-	SortPanelTopY    = 7
+	SortPanelTopY    = 8
 	SortPanelBottomX = 23
 
 	NotificationBottomX = 75

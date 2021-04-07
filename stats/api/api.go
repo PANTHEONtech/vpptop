@@ -19,6 +19,7 @@ package api
 import (
 	"context"
 	govppapi "git.fd.io/govpp.git/api"
+	"git.fd.io/govpp.git/core"
 )
 
 // VppProviderAPI uses VPPTop app to manage VPP connection and retrieve
@@ -33,8 +34,11 @@ type VppProviderAPI interface {
 	// Disconnect from the VPP
 	Disconnect()
 
-	// Get various VPP data (version, interfaces, ...)
-	GetVersion() string
+	// GetInfo returns text representation of the overall connection state of both
+	// providers (vpp, stats) including string containing the version and the build date
+	GetState() (core.ConnectionState, string)
+
+	// Get various VPP data (interfaces, nodes...)
 	GetInterfaces(ctx context.Context) ([]Interface, error)
 	GetNodes(ctx context.Context) ([]Node, error)
 	GetErrors(ctx context.Context) ([]Error, error)
