@@ -18,3 +18,5 @@ require (
 	k8s.io/client-go v0.0.0-20190620085101-78d2af792bab
 	k8s.io/utils v0.0.0-20191010214722-8d271d903fe4 // indirect
 )
+
+replace github.com/opencontainers/image-spec => github.com/opencontainers/image-spec v1.0.2 // Vulnerable versions: < 1.0.2
