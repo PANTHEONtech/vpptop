@@ -12,7 +12,7 @@ Below is a short demo preview of **VPPTop** in action:
 
 |Branch|Supported VPP versions|
 |---|---|
-|[![master][badge-master]][branch-master]| [19.04][vpp-19.04], [19.08][vpp-19.08], [20.01][vpp-20.01], [20.09-rc0][vpp-20.09] |
+|[![master][badge-master]][branch-master]| [20.01][vpp-20.01], [20.09-rc0][vpp-20.09], [21.01][vpp-21.01], [21.06][vpp-21.06]|
 |[![vpp1904][badge-1904]][branch-1904]|[19.04][vpp-19.04]|
 
 ## Features
@@ -28,10 +28,11 @@ VPPTop currently supports following metrics:
 ## Requirements
 
 VPPTop requires [Go][go-download] **1.11** (or later) to install and run. [VPP][wiki-vpp] versions supported through the VPP-Agent are as follows:
-- **19.08.1**
 - **20.01**
 - **20.05**
 - **20.09**
+- **21.01**
+- **21.06**
 
 VPP version supported by the local implementation:
 - **v21.01-rc0~282**
@@ -42,7 +43,7 @@ All versions except the local one are enabled via Ligato [vpp-agent][vpp-agent] 
 
 ### Install VPP
 
-To install VPP from Packagecloud on Ubuntu 18.04, run following commands where you replace `<VERSION>` with either `1904`, `1908`, `2001` or `master` for the latest version:
+To install VPP from Packagecloud on Ubuntu 18.04, run following commands where you replace `<VERSION>` with either `2001`, `2101`, `2106` or `master` for the latest version:
 
 ```
 curl -s https://packagecloud.io/install/repositories/fdio/<VERSION>/script.deb.sh | sudo bash
@@ -134,10 +135,10 @@ In the code above, both handlers are provided which means VPPTop iterates over t
 [preview-svg]: https://asciinema.org/a/NHODZM2ebcwWFPEEPcja8X19R.svg
 [stats-guide]: https://wiki.fd.io/view/VPP/Command-line_Arguments#statseg_.7B_..._.7D
 [stats-version-commit]: https://github.com/FDio/vpp/commit/1cb333cdf5ce26557233c5bdb5a18738cb6e1e2c
-[vpp-19.04]: https://packagecloud.io/fdio/1904
-[vpp-19.08]: https://packagecloud.io/fdio/1908
 [vpp-20.01]: https://packagecloud.io/fdio/2001
 [vpp-20.09]: https://packagecloud.io/fdio/2009
+[vpp-21.01]: https://packagecloud.io/fdio/2101
+[vpp-21.06]: https://packagecloud.io/fdio/2106
 [vpp-agent]: https://github.com/ligato/vpp-agent
 [vpp-install]: https://wiki.fd.io/view/VPP/Installing_VPP_binaries_from_packages
 [wiki-tui]: https://en.wikipedia.org/wiki/Text-based_user_interface

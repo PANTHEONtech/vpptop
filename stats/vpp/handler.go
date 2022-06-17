@@ -19,6 +19,7 @@ package vpp
 import (
 	"context"
 	"encoding/gob"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/PantheonTechnologies/vpptop/stats/api"
 	"go.ligato.io/cn-infra/v2/logging/logrus"
@@ -30,16 +31,16 @@ import (
 	ifplugincalls "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"
 
 	// import for handler ifplugin handler registration
-	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls/vpp1908"
-	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls/vpp2001"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls/vpp2005"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls/vpp2009"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls/vpp2101"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls/vpp2106"
 
 	// import for handler telemetry handler registration
-	_ "go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls/vpp1908"
-	_ "go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls/vpp2001"
 	_ "go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls/vpp2005"
 	_ "go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls/vpp2009"
+	_ "go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls/vpp2101"
+	_ "go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls/vpp2106"
 )
 
 // HandlerDef is a VPP handler definition. It is used to validate
