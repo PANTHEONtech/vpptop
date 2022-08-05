@@ -17,6 +17,7 @@
 package command
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -87,6 +88,7 @@ func findNode(nodes []v1.Node, name string) (v1.Node, bool) {
 
 // getNodes returns all k8s nodes in the cluster.
 func getNodes(kubeconfig string) []v1.Node {
+	var ctx context.Context
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
 	if err != nil {
 		return nil
@@ -96,7 +98,7 @@ func getNodes(kubeconfig string) []v1.Node {
 	if err != nil {
 		return nil
 	}
-	nodeList, err := clientset.CoreV1().Nodes().List(metav1.ListOptions{})
+	nodeList, err := clientset.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil
 	}
