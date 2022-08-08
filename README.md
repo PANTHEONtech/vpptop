@@ -25,7 +25,7 @@ VPPTop currently supports following metrics:
 * **Memory usage** - data about free and used memory per thread.
 * **Thread info** - displays data about thread ID and name, PID, number of cores, etc.
 
-## Requirements
+## VPP Requirements
 
 VPPTop requires [Go][go-download] **1.11** (or later) to install and run. [VPP][wiki-vpp] versions supported through the VPP-Agent are as follows:
 - **21.01**
@@ -63,22 +63,32 @@ statseg {
 
 ## Install & Run VPPTop
 
+### Prerequisites
+
+- Go 1.17+
+
+### Install
+
 To install VPPTop run:
 
+```shell
+# install latest release version of vpptop
+go install go.pantheon.tech/vpptop@latest
+# install master branch version of vpptop
+go install go.pantheon.tech/vpptop@master
 ```
-# install vpptop to $GOPATH/bin
-$ go get -u go.pantheon.tech/vpptop
-```
+
+### Run
 
 To start VPPTop run:
 
-```
+```shell
 # sudo might be required here, because of the permissions to stats socket file
-$ sudo -E vpptop
+sudo -E vpptop
 ```
 
-In case you own the source code, use makefile to build or install binaries:
-```
+In case you have cloned the repository, use can use `make` to build or install binaries:
+```shell
 make build
 # or
 make install
