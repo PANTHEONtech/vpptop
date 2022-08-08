@@ -21,7 +21,7 @@ import (
 	"encoding/gob"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/PantheonTechnologies/vpptop/stats/api"
+	"go.pantheon.tech/vpptop/stats/api"
 	"go.ligato.io/cn-infra/v2/logging/logrus"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi"

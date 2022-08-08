@@ -1,4 +1,4 @@
-module github.com/PantheonTechnologies/vpptop
+module go.pantheon.tech/vpptop
 
 go 1.13
 

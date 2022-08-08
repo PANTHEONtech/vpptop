@@ -69,7 +69,7 @@ To install VPPTop run:
 
 ```
 # install vpptop to $GOPATH/bin
-$ go get -u github.com/PantheonTechnologies/vpptop
+$ go get -u go.pantheon.tech/vpptop
 ```
 
 To start VPPTop run:
@@ -128,8 +128,8 @@ In the code above, both handlers are provided which means VPPTop iterates over t
 
 [badge-1904]: https://img.shields.io/badge/branch-vpp1904-orange.svg?logo=git&logoColor=white
 [badge-master]: https://img.shields.io/badge/branch-master-blue.svg?logo=git&logoColor=white
-[branch-master]: https://github.com/PantheonTechnologies/vpptop/tree/master
-[branch-1904]: https://github.com/PantheonTechnologies/vpptop/tree/vpp1904
+[branch-master]: https://github.com/PANTHEONtech/vpptop/tree/master
+[branch-1904]: https://github.com/PANTHEONtech/vpptop/tree/vpp1904
 [go-download]: https://golang.org/dl/
 [preview]: https://asciinema.org/a/NHODZM2ebcwWFPEEPcja8X19R
 [preview-svg]: https://asciinema.org/a/NHODZM2ebcwWFPEEPcja8X19R.svg

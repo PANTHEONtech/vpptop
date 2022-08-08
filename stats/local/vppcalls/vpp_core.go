@@ -20,8 +20,8 @@ import (
 	"context"
 	"fmt"
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/PantheonTechnologies/vpptop/stats/api"
-	"github.com/PantheonTechnologies/vpptop/stats/local/binapi/vpe"
+	"go.pantheon.tech/vpptop/stats/api"
+	"go.pantheon.tech/vpptop/stats/local/binapi/vpe"
 	"github.com/prometheus/common/log"
 	"strings"
 )
