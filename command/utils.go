@@ -88,7 +88,7 @@ func findNode(nodes []v1.Node, name string) (v1.Node, bool) {
 
 // getNodes returns all k8s nodes in the cluster.
 func getNodes(kubeconfig string) []v1.Node {
-	var ctx context.Context
+	ctx := context.Background()
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
 	if err != nil {
 		return nil
