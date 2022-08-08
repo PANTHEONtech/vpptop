@@ -3,7 +3,7 @@ module go.pantheon.tech/vpptop
 go 1.13
 
 require (
-	git.fd.io/govpp.git v0.4.1-0.20220519085400-f06c92da266e
+	git.fd.io/govpp.git v0.5.0
 	github.com/gizak/termui/v3 v3.1.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/common v0.26.0
