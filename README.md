@@ -25,9 +25,9 @@ VPPTop currently supports following metrics:
 * **Memory usage** - data about free and used memory per thread.
 * **Thread info** - displays data about thread ID and name, PID, number of cores, etc.
 
-## Requirements
+## VPP Requirements
 
-VPPTop requires [Go][go-download] **1.11** (or later) to install and run. [VPP][wiki-vpp] versions supported through the VPP-Agent are as follows:
+[VPP][wiki-vpp] versions supported are:
 - **21.01**
 - **21.06**
 - **22.02**
@@ -35,13 +35,13 @@ VPPTop requires [Go][go-download] **1.11** (or later) to install and run. [VPP][
 VPP version supported by the local implementation:
 - **v21.01-rc0~282**
 
-All versions except the local one are enabled via Ligato [vpp-agent][vpp-agent] (current version is v3.1.0). The local version implementation resides directly in the VPPTop. The meaning of the local VPP support is to easily allow additional VPP versions without manipulating or updating external dependencies. The guide about how to change local in order to support custom version can be found later in the document.
+All versions except the local one are enabled via Ligato [vpp-agent][vpp-agent]. The local version implementation resides directly in the VPPTop. The meaning of the local VPP support is to easily allow additional VPP versions without manipulating or updating external dependencies. The guide about how to change local in order to support custom version can be found later in the document.
 
 **Note:** for full support of an interface/node names in VPPTop, the VPP version has to be **19.04.4** or newer. The release version of VPP 19.04 does not work properly, because of the [stats API versioning][stats-version-commit], which was added later after the release of VPP 19.04. If you want to use this version of the VPP, use the _stable/1904_ VPPTop branch where it was backported.  
 
 ### Install VPP
 
-To install VPP from Packagecloud on Ubuntu 18.04, run following commands where you replace `<VERSION>` with either `2101`, `2106`, `2202` or `master` for the latest version:
+To install VPP from Packagecloud, run following commands where you replace `<VERSION>` with either `2101`, `2106`, `2202` or `master` for the latest version:
 
 ```
 curl -s https://packagecloud.io/install/repositories/fdio/<VERSION>/script.deb.sh | sudo bash
@@ -63,22 +63,30 @@ statseg {
 
 ## Install & Run VPPTop
 
+VPPTop requires [Go][go-download] **1.17** (or newer) to install and run.
+
+### Install
+
 To install VPPTop run:
 
+```shell
+# install latest release version of vpptop
+go install go.pantheon.tech/vpptop@latest
+# install master branch version of vpptop
+go install go.pantheon.tech/vpptop@master
 ```
-# install vpptop to $GOPATH/bin
-$ go get -u go.pantheon.tech/vpptop
-```
+
+### Run
 
 To start VPPTop run:
 
-```
+```shell
 # sudo might be required here, because of the permissions to stats socket file
-$ sudo -E vpptop
+sudo -E vpptop
 ```
 
-In case you own the source code, use makefile to build or install binaries:
-```
+In case you have cloned the repository, use can use `make` to build or install binaries:
+```shell
 make build
 # or
 make install

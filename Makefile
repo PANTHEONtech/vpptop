@@ -12,11 +12,11 @@ LDFLAGS = -w -s \
 
 build: ## Build VPPTop binaries
 	@echo "# building ${PROJECT} ${VERSION}"
-	cd cmd/vpptop && go build -ldflags "${LDFLAGS}"
+	go build -v -ldflags "${LDFLAGS}"
 
 install: ## Install VPPTop binaries
 	@echo "# building ${PROJECT} ${VERSION}"
-	cd cmd/vpptop && go install -ldflags "${LDFLAGS}"
+	go install -ldflags "${LDFLAGS}"
 
 generate-binapi:
 	@echo "# generating binapi using input from ${VPP_API_DIR}"

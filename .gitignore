@@ -1,10 +1,7 @@
 /.idea
 
 # binaries
-cmd/vpptop/vpptop
+/vpptop
 
 # log files
-vpptop.log
-remote.log
-cmd/vpptop/vpptop.log
-cmd/vpptop/remote.log
+*.log
