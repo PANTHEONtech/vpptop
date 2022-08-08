@@ -31,16 +31,14 @@ import (
 	ifplugincalls "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"
 
 	// import for handler ifplugin handler registration
-	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls/vpp2005"
-	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls/vpp2009"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls/vpp2101"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls/vpp2106"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls/vpp2202"
 
 	// import for handler telemetry handler registration
-	_ "go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls/vpp2005"
-	_ "go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls/vpp2009"
 	_ "go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls/vpp2101"
 	_ "go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls/vpp2106"
+	_ "go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls/vpp2202"
 )
 
 // HandlerDef is a VPP handler definition. It is used to validate
