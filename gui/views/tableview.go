@@ -17,8 +17,8 @@
 package views
 
 import (
-	"github.com/PantheonTechnologies/vpptop/gui"
-	"github.com/PantheonTechnologies/vpptop/gui/xtui"
+	"go.pantheon.tech/vpptop/gui"
+	"go.pantheon.tech/vpptop/gui/xtui"
 	tui "github.com/gizak/termui/v3"
 )
 

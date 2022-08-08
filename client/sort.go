@@ -17,7 +17,7 @@
 package client
 
 import (
-	"github.com/PantheonTechnologies/vpptop/stats/api"
+	"go.pantheon.tech/vpptop/stats/api"
 	"sort"
 )
 

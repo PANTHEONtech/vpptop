@@ -33,7 +33,7 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"git.fd.io/govpp.git/core"
 	"git.fd.io/govpp.git/proxy"
-	"github.com/PantheonTechnologies/vpptop/stats/api"
+	"go.pantheon.tech/vpptop/stats/api"
 	"github.com/sirupsen/logrus"
 )
 

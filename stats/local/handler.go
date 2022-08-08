@@ -20,12 +20,12 @@ import (
 	"context"
 	"encoding/gob"
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/PantheonTechnologies/vpptop/stats/api"
-	"github.com/PantheonTechnologies/vpptop/stats/local/binapi/dhcp"
-	interfaces "github.com/PantheonTechnologies/vpptop/stats/local/binapi/interface"
-	"github.com/PantheonTechnologies/vpptop/stats/local/binapi/ip"
-	"github.com/PantheonTechnologies/vpptop/stats/local/binapi/vpe"
-	"github.com/PantheonTechnologies/vpptop/stats/local/vppcalls"
+	"go.pantheon.tech/vpptop/stats/api"
+	"go.pantheon.tech/vpptop/stats/local/binapi/dhcp"
+	interfaces "go.pantheon.tech/vpptop/stats/local/binapi/interface"
+	"go.pantheon.tech/vpptop/stats/local/binapi/ip"
+	"go.pantheon.tech/vpptop/stats/local/binapi/vpe"
+	"go.pantheon.tech/vpptop/stats/local/vppcalls"
 )
 
 // GetVersion of the local VPP implementation

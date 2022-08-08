@@ -15,7 +15,7 @@ package vpe
 import (
 	api "git.fd.io/govpp.git/api"
 	codec "git.fd.io/govpp.git/codec"
-	vpe_types "github.com/PantheonTechnologies/vpptop/stats/local/binapi/vpe_types"
+	vpe_types "go.pantheon.tech/vpptop/stats/local/binapi/vpe_types"
 )
 
 // This is a compile-time assertion to ensure that this generated file

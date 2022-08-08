@@ -18,9 +18,9 @@ import (
 
 	api "git.fd.io/govpp.git/api"
 	codec "git.fd.io/govpp.git/codec"
-	ethernet_types "github.com/PantheonTechnologies/vpptop/stats/local/binapi/ethernet_types"
-	interface_types "github.com/PantheonTechnologies/vpptop/stats/local/binapi/interface_types"
-	ip_types "github.com/PantheonTechnologies/vpptop/stats/local/binapi/ip_types"
+	ethernet_types "go.pantheon.tech/vpptop/stats/local/binapi/ethernet_types"
+	interface_types "go.pantheon.tech/vpptop/stats/local/binapi/interface_types"
+	ip_types "go.pantheon.tech/vpptop/stats/local/binapi/ip_types"
 )
 
 // This is a compile-time assertion to ensure that this generated file

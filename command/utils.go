@@ -23,8 +23,8 @@ import (
 	"net"
 	"os"
 
-	"github.com/PantheonTechnologies/vpptop/client"
-	"github.com/PantheonTechnologies/vpptop/gui"
+	"go.pantheon.tech/vpptop/client"
+	"go.pantheon.tech/vpptop/gui"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"

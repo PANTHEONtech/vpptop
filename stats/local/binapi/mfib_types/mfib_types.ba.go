@@ -16,8 +16,8 @@ import (
 	"strconv"
 
 	api "git.fd.io/govpp.git/api"
-	fib_types "github.com/PantheonTechnologies/vpptop/stats/local/binapi/fib_types"
-	_ "github.com/PantheonTechnologies/vpptop/stats/local/binapi/ip_types"
+	fib_types "go.pantheon.tech/vpptop/stats/local/binapi/fib_types"
+	_ "go.pantheon.tech/vpptop/stats/local/binapi/ip_types"
 )
 
 // This is a compile-time assertion to ensure that this generated file
