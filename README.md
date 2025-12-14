@@ -33,7 +33,7 @@ VPPTop currently supports following metrics:
 - **22.02**
 
 VPP version supported by the local implementation:
-- **v21.01-rc0~282**
+- **v25.10-release**
 
 All versions except the local one are enabled via Ligato [vpp-agent][vpp-agent]. The local version implementation resides directly in the VPPTop. The meaning of the local VPP support is to easily allow additional VPP versions without manipulating or updating external dependencies. The guide about how to change local in order to support custom version can be found later in the document.
 

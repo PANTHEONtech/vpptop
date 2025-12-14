@@ -19,11 +19,14 @@ package vppcalls
 import (
 	"context"
 	"fmt"
-	govppapi "git.fd.io/govpp.git/api"
-	"go.pantheon.tech/vpptop/stats/api"
-	"go.pantheon.tech/vpptop/stats/local/binapi/vpe"
-	"github.com/prometheus/common/log"
 	"strings"
+
+	govppapi "git.fd.io/govpp.git/api"
+	"github.com/prometheus/common/log"
+	"go.pantheon.tech/vpptop/stats/api"
+	"go.pantheon.tech/vpptop/stats/local/binapi/memclnt"
+	"go.pantheon.tech/vpptop/stats/local/binapi/vlib"
+	"go.pantheon.tech/vpptop/stats/local/binapi/vpe"
 )
 
 // VppCoreAPI defines vpe-specific methods
@@ -36,19 +39,23 @@ type VppCoreAPI interface {
 
 // VppCoreHandler implements VppCoreAPI
 type VppCoreHandler struct {
-	vpeRpc vpe.RPCService
+	vpeRpc     vpe.RPCService
+	vlibRpc    vlib.RPCService
+	memclntRpc memclnt.RPCService
 }
 
 // NewVppCoreHandler returns a new instance of the VppCoreAPI
 func NewVppCoreHandler(conn govppapi.Connection) VppCoreAPI {
 	h := &VppCoreHandler{
-		vpeRpc: vpe.NewServiceClient(conn),
+		vpeRpc:     vpe.NewServiceClient(conn),
+		vlibRpc:    vlib.NewServiceClient(conn),
+		memclntRpc: memclnt.NewServiceClient(conn),
 	}
 	return h
 }
 
 func (h VppCoreHandler) RunCli(ctx context.Context, cmd string) (string, error) {
-	resp, err := h.vpeRpc.CliInband(ctx, &vpe.CliInband{
+	resp, err := h.vlibRpc.CliInband(ctx, &vlib.CliInband{
 		Cmd: cmd,
 	})
 	if err != nil {
@@ -119,7 +126,7 @@ func (h VppCoreHandler) GetVersion(ctx context.Context) (*api.VersionInfo, error
 }
 
 func (h VppCoreHandler) GetSession(ctx context.Context) (*api.SessionInfo, error) {
-	ctrlPing, err := h.vpeRpc.ControlPing(ctx, new(vpe.ControlPing))
+	ctrlPing, err := h.memclntRpc.ControlPing(ctx, new(memclnt.ControlPing))
 	if err != nil {
 		return nil, fmt.Errorf("control ping error: %v", err)
 	}

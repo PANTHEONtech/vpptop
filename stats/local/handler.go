@@ -19,6 +19,7 @@ package local
 import (
 	"context"
 	"encoding/gob"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"go.pantheon.tech/vpptop/stats/api"
 	"go.pantheon.tech/vpptop/stats/local/binapi/dhcp"

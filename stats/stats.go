@@ -33,8 +33,8 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"git.fd.io/govpp.git/core"
 	"git.fd.io/govpp.git/proxy"
-	"go.pantheon.tech/vpptop/stats/api"
 	"github.com/sirupsen/logrus"
+	"go.pantheon.tech/vpptop/stats/api"
 )
 
 const (
