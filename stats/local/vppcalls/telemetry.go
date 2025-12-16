@@ -24,9 +24,10 @@ import (
 	"strings"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"go.pantheon.tech/vpptop/stats/api"
-	"go.pantheon.tech/vpptop/stats/local/binapi/vpe"
 	"github.com/pkg/errors"
+	"go.pantheon.tech/vpptop/stats/api"
+	"go.pantheon.tech/vpptop/stats/local/binapi/vlib"
+	"go.pantheon.tech/vpptop/stats/local/binapi/vpe"
 )
 
 // TelemetryVppAPI defines telemetry-specific methods
@@ -39,15 +40,17 @@ type TelemetryVppAPI interface {
 
 // TelemetryHandler implements TelemetryVppAPI
 type TelemetryHandler struct {
-	sp     govppapi.StatsProvider
-	vpeRpc vpe.RPCService
+	sp      govppapi.StatsProvider
+	vpeRpc  vpe.RPCService
+	vlibRpc vlib.RPCService
 }
 
 // NewTelemetryHandler returns a new instance of the TelemetryVppAPI
 func NewTelemetryHandler(conn govppapi.Connection, sp govppapi.StatsProvider) TelemetryVppAPI {
 	return &TelemetryHandler{
-		vpeRpc: vpe.NewServiceClient(conn),
-		sp:     sp,
+		vpeRpc:  vpe.NewServiceClient(conn),
+		vlibRpc: vlib.NewServiceClient(conn),
+		sp:      sp,
 	}
 }
 
@@ -76,7 +79,7 @@ func (h *TelemetryHandler) GetInterfaceStats(context.Context) (*govppapi.Interfa
 
 func (h *TelemetryHandler) GetNodeCounters(ctx context.Context) (*api.NodeCounterInfo, error) {
 	var counters []api.NodeCounter
-	data, err := h.vpeRpc.CliInband(ctx, &vpe.CliInband{
+	data, err := h.vlibRpc.CliInband(ctx, &vlib.CliInband{
 		Cmd: "show node counters",
 	})
 	if err != nil {
@@ -121,7 +124,7 @@ func (h *TelemetryHandler) GetNodeCounters(ctx context.Context) (*api.NodeCounte
 }
 
 func (h *TelemetryHandler) GetRuntimeInfo(ctx context.Context) (*api.RuntimeInfo, error) {
-	cliResp, err := h.vpeRpc.CliInband(ctx, &vpe.CliInband{
+	cliResp, err := h.vlibRpc.CliInband(ctx, &vlib.CliInband{
 		Cmd: "show runtime",
 	})
 	if err != nil {
@@ -175,7 +178,7 @@ func (h *TelemetryHandler) GetRuntimeInfo(ctx context.Context) (*api.RuntimeInfo
 }
 
 func (h *TelemetryHandler) GetThreads(ctx context.Context) ([]api.ThreadData, error) {
-	threads, err := h.vpeRpc.ShowThreads(ctx, new(vpe.ShowThreads))
+	threads, err := h.vlibRpc.ShowThreads(ctx, new(vlib.ShowThreads))
 	if err != nil {
 		return nil, fmt.Errorf("show threads error: %v", err)
 	}
