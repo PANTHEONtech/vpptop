@@ -1,6 +1,6 @@
 module go.pantheon.tech/vpptop
 
-go 1.23.0
+go 1.23
 
 require (
 	git.fd.io/govpp.git v0.5.0
